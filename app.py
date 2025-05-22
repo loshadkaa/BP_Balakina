@@ -11,8 +11,13 @@ import sqlite3
 import hashlib
 from flask import jsonify
 
+
 app = Flask(__name__)
 app.secret_key = os.urandom(24).hex()
+
+MODEL_URL = "https://drive.google.com/uc?export=download&id=1RmUTs5eGHJh-1_EbpGokomlvi45DgmRh"
+MODEL_PATH = os.path.join(MODEL_FOLDER, 'best.pt')
+
 
 # Configuration
 UPLOAD_FOLDER = 'static/uploads'
@@ -32,20 +37,31 @@ model_path = os.path.join(MODEL_FOLDER, 'best.pt')  # Default model
 app.jinja_env.globals.update(datetime=datetime)
 
 
-def load_model(path):
-    global model
-    try:
-        torch.hub._validate_not_a_forked_repo = lambda a, b, c: True
-        model = torch.hub.load('ultralytics/yolov5', 'custom', path=path)
-        model.eval()
-        print(f"Model loaded from {path}")
-    except Exception as e:
-        print(f"Model loading error: {e}")
-        model = None
-
-# Load the default model at startup
-# if os.path.exists(model_path):
-#     load_model(model_path)
+def download_model():
+    if not os.path.exists(MODEL_PATH):
+        print("📥 Скачиваем модель с Google Drive...")
+        response = requests.get(MODEL_URL)
+        if response.status_code == 200:
+            os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
+            with open(MODEL_PATH, 'wb') as f:
+                f.write(response.content)
+            print("✅ Модель успешно загружена!")
+        else:
+            print(f"❌ Не удалось загрузить модель. Код ответа: {response.status_code}")
+# def load_model(path):
+#     global model
+#     try:
+#         torch.hub._validate_not_a_forked_repo = lambda a, b, c: True
+#         model = torch.hub.load('ultralytics/yolov5', 'custom', path=path)
+#         model.eval()
+#         print(f"Model loaded from {path}")
+#     except Exception as e:
+#         print(f"Model loading error: {e}")
+#         model = None
+#
+# # Load the default model at startup
+# # if os.path.exists(model_path):
+# #     load_model(model_path)
 
 def datetimeformat(value, format='%Y-%m-%d %H:%M:%S'):
     if isinstance(value, str):
@@ -1470,6 +1486,7 @@ def logout():
 
 
 if __name__ == '__main__':
+    download_model()
     os.makedirs(os.path.dirname(DATABASE) or os.path.curdir, exist_ok=True)
     init_db()
     port = int(os.environ.get("PORT", 5000))
