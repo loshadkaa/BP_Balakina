@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test - {{ assignment.description }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f9ff;
+            color: #333;
+        }
+        .test-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .test-header {
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .test-title {
+            font-size: 24px;
+            color: #1e3a8a;
+            margin-bottom: 10px;
+        }
+        .test-model {
+            font-size: 16px;
+            color: #555;
+        }
+        .image-container {
+            position: relative;
+            display: inline-block;
+            line-height: 0;
+            margin-bottom: 20px;
+        }
+        .test-image {
+            max-width: 100%;
+            display: block;
+        }
+        .drawing-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: auto;
+            cursor: crosshair;
+            z-index: 10;
+        }
+        .controls {
+            margin: 15px 0;
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.1s ease, transform 0.1s ease, box-shadow 0.1s ease;
+        }
+        .btn:hover {
+          filter: brightness(1.1);
+        }
+
+        .btn:active {
+          transform: scale(0.95);
+          box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .btn:focus {
+          outline: none;
+          box-shadow: 0 0 0 3px rgba(59,130,246,0.5);
+        }
+        .btn-draw {
+            background-color: #3b82f6;
+            color: white;
+            cursor: pointer;
+        }
+        .btn-clear {
+            background-color: #ef4444;
+            color: white;
+        }
+        .btn-submit {
+            background-color: #10b981;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+<div class="test-container">
+    <div class="test-header">
+        <div class="test-title">Test Assignment</div>
+        <div class="test-model">Model: {{ assignment.model_name }}</div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-draw" onclick="enableDrawing()">Draw</button>
+        <button class="btn btn-clear" onclick="clearAllCanvases()">Clear</button>
+        <button class="btn btn-submit" onclick="submitAllRectangles()">Submit All</button>
+    </div>
+
+    {% for image in images %}
+    <div class="image-container">
+        <img id="testImage{{ loop.index }}" class="test-image" src="{{ url_for('static', filename='uploads/' + image.filename) }}">
+        <canvas id="drawCanvas{{ loop.index }}" class="drawing-canvas" data-img-id="{{ image.id }}"></canvas>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+const imageIds = {{ images | map(attribute='id') | list | tojson }};
+
+let canvasElements = [];
+let drawing = false;
+let startX = 0, startY = 0;
+let rectMap = {};
+
+window.onload = () => {
+  imageIds.forEach((imageId, idx) => {
+    const i = idx + 1;
+    const img    = document.getElementById(`testImage${i}`);
+    const canvas = document.getElementById(`drawCanvas${i}`);
+    const ctx    = canvas.getContext('2d');
+
+    canvasElements.push({ canvas, ctx, imageId });
+
+    const resize = () => {
+      const { width, height } = img.getBoundingClientRect();
+      canvas.width  = width;
+      canvas.height = height;
+      canvas.style.width  = width  + 'px';
+      canvas.style.height = height + 'px';
+      ctx.clearRect(0,0,width,height);
+    };
+
+    img.addEventListener('load', resize);
+    window.addEventListener('resize', resize);
+    if (img.complete) resize();
+  });
+};
+
+function enableDrawing() {
+  canvasElements.forEach(({ canvas, ctx, imageId }) => {
+    canvas.onmousedown = e => {
+      const r = canvas.getBoundingClientRect();
+      startX = e.clientX - r.left;
+      startY = e.clientY - r.top;
+      drawing = true;
+    };
+    canvas.onmousemove = e => {
+      if (!drawing) return;
+      const r = canvas.getBoundingClientRect();
+      const mx = e.clientX - r.left, my = e.clientY - r.top;
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      (rectMap[imageId]||[]).forEach(r => {
+        ctx.strokeStyle = 'red'; ctx.lineWidth=2;
+        ctx.strokeRect(r.x,r.y,r.width,r.height);
+      });
+      ctx.strokeStyle='red'; ctx.lineWidth=2;
+      ctx.strokeRect(startX,startY,mx-startX,my-startY);
+    };
+    canvas.onmouseup = e => {
+      if (!drawing) return;
+      const r = canvas.getBoundingClientRect();
+      const endX = e.clientX - r.left, endY = e.clientY - r.top;
+      rectMap[imageId] = rectMap[imageId]||[];
+      rectMap[imageId].push({
+        x: startX,
+        y: startY,
+        width:  endX - startX,
+        height: endY - startY
+      });
+      drawing = false;
+    };
+  });
+}
+
+function submitAllRectangles() {
+  const toSend = {};
+  Object.entries(rectMap).forEach(([imgId, rects]) => {
+    toSend[`rectangles_${imgId}`] = rects;
+  });
+  console.log('Submitting rectangles:', toSend);
+  if (!Object.keys(toSend).length) {
+    return alert('Please draw at least one rectangle.');
+  }
+  fetch(`/submit-test/{{ assignment.id }}`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ rectangles: toSend })
+  })
+  .then(r=>r.json())
+  .then(d=>{
+    if(d.success){
+      alert(`Your score: ${d.score}%`);
+      window.location = `/test-result/${d.result_id}`;
+    } else {
+      alert('Error: '+d.message);
+    }
+  })
+  .catch(()=>alert('Submit failed'));
+}
+</script>
+
+</body>
+</html>

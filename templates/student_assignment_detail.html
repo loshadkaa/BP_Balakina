@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Mediscan – Test detail</title>
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+  />
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0; padding: 0;
+      background-color: #f5f9ff;
+      color: #333;
+    }
+    .sidebar {
+      width: 250px; height: 100vh;
+      background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+      position: fixed; top: 0; left: 0;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+      display: flex; flex-direction: column;
+      padding-top: 20px;
+    }
+    .logo {
+      color: #fff; font-size: 24px; font-weight: bold;
+      text-align: center; padding: 20px 0;
+      margin-bottom: 30px;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+    .menu-link {
+      color: #fff; text-decoration: none;
+      display: flex; align-items: center;
+      padding: 12px 25px; margin: 5px 10px;
+      border-radius: 5px;
+      transition: background .3s;
+    }
+    .menu-link i { margin-right: 10px; font-size: 18px; }
+    .menu-link:hover,
+    .menu-link.active {
+      background-color: rgba(255,255,255,0.2);
+    }
+    .main-content {
+      margin-left: 250px; padding: 30px;
+    }
+    .header {
+      display: flex; justify-content: space-between;
+      align-items: center; margin-bottom: 30px;
+    }
+    .page-title {
+      font-size: 28px; color: #1e3a8a; font-weight: 600;
+    }
+    .user-profile {
+      display: flex; align-items: center;
+    }
+    .user-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background-color: #3b82f6; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      margin-right: 10px; font-weight: bold; font-size: 14px;
+    }
+    .logout-btn {
+      background-color: #ef4444; color: #fff;
+      padding: 8px 15px; border-radius: 5px;
+      text-decoration: none; font-weight: 500; font-size: 14px;
+      transition: background .2s; margin-left: 20px;
+    }
+    .logout-btn:hover { background-color: #dc2626; }
+
+    .container {
+      max-width: 800px; margin: 0 auto;
+      background: #fff; border-radius: 10px;
+      padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .back-btn {
+      display: inline-block; margin-bottom: 20px;
+      padding: 8px 16px; background: #3b82f6; color: #fff;
+      border-radius: 5px; text-decoration: none;
+      transition: background .2s;
+    }
+    .back-btn:hover { background: #2563eb; }
+    .assignment-title {
+      font-size: 22px; color: #1e3a8a;
+      margin-bottom: 15px;
+    }
+    .info-grid {
+      display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr));
+      gap: 15px; margin-bottom: 20px;
+    }
+    .info-grid div h4 {
+      margin: 0 0 5px; font-size: 14px; color: #555;
+    }
+    .info-grid div p {
+      margin: 0; font-size: 16px; color: #333; font-weight: 500;
+    }
+    .image-gallery {
+      display: flex; flex-wrap: wrap; gap: 10px;
+      margin-bottom: 20px;
+    }
+    .image-thumbnail {
+      flex: 1 1 calc(33% - 10px);
+      max-width: calc(33% - 10px);
+      background: #f9fafb; padding: 5px;
+      border-radius: 5px; text-align: center;
+    }
+    .image-thumbnail img {
+      width: 100%; height: auto; border-radius: 4px;
+    }
+    .button-row {
+      text-align: center; margin-top: 20px;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 20px; font-size: 14px; font-weight: 600;
+      border: none; border-radius: 8px; cursor: pointer;
+      transition: background .2s, transform .2s;
+      text-decoration: none; color: #fff;
+      min-width: 160px; justify-content: center;
+    }
+    .btn-start {
+      background: #10b981;
+    }
+    .btn-start:hover {
+      background: #0e9e6e; transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(16,185,129,0.4);
+    }
+    .btn-view {
+      background: #3b82f6;
+    }
+    .btn-view:hover {
+      background: #2563eb; transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(59,130,246,0.4);
+    }
+    .completed-note {
+      font-size: 16px; color: #ef4444; font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="logo">MEDISCAN</div>
+    <a href="{{ url_for('student_dashboard') }}"
+       class="menu-link {% if request.path==url_for('student_dashboard')%}active{% endif %}">
+      <i class="fas fa-home"></i> Dashboard
+    </a>
+    <a href="{{ url_for('assignments_list') }}"
+       class="menu-link {% if request.path==url_for('assignments_list')%}active{% endif %}">
+      <i class="fas fa-tasks"></i> Tests
+    </a>
+    <a href="{{ url_for('settings') }}"
+       class="menu-link {% if request.path==url_for('settings')%}active{% endif %}">
+      <i class="fas fa-cog"></i> Settings
+    </a>
+  </div>
+
+  <div class="main-content">
+    <div class="header">
+      <div class="page-title">Test detail</div>
+      <div class="user-profile">
+        <div class="user-avatar">
+          {{ session['user_name'].split()[0][0] }}{{ session['user_name'].split()[1][0] }}
+        </div>
+        <div>{{ session['user_name'] }}</div>
+        <a href="{{ url_for('logout') }}" class="logout-btn">
+          <i class="fas fa-sign-out-alt"></i> Log out
+        </a>
+      </div>
+    </div>
+
+    <div class="container">
+      <a href="{{ url_for('assignments_list') }}" class="back-btn">
+        <i class="fas fa-arrow-left"></i> Back to tests
+      </a>
+
+      <div class="assignment-title">{{ assignment.description }}</div>
+
+      <div class="info-grid">
+        <div>
+          <h4>Model</h4>
+          <p>{{ assignment.model_used }}</p>
+        </div>
+        <div>
+          <h4>Start</h4>
+          <p>{{ assignment.start_date|datetimeformat }}</p>
+        </div>
+        <div>
+          <h4>End</h4>
+          <p>{{ assignment.end_date|datetimeformat }}</p>
+        </div>
+        <div>
+          <h4>Created by</h4>
+          <p>{{ assignment.creator_name }} {{ assignment.creator_surname }}</p>
+        </div>
+      </div>
+
+      <div class="image-gallery">
+        {% for img in images %}
+        <div class="image-thumbnail">
+          <img src="{{ url_for('static', filename='uploads/'+img.filename) }}"
+               alt="Образец">
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="button-row">
+        {% if not completed %}
+          <a href="{{ url_for('start_test', assignment_id=assignment.id) }}"
+             class="btn btn-start">
+            <i class="fas fa-play"></i> Start the test
+          </a>
+        {% else %}
+          <span class="completed-note">
+            <i class="fas fa-check-circle"></i> The test has already been passed
+          </span>
+          <a class="btn btn-view"
+             href="{{ url_for('test_result_view', result_id=result_id) }}">
+            <i class="fas fa-eye"></i> View result
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</body>
+</html>

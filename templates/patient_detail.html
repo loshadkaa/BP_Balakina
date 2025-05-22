@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mediscan - {{ patient.name }} {{ patient.surname }}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f9ff;
+            color: #333;
+        }
+
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+            position: fixed;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            padding-top: 20px;
+        }
+
+        .logo {
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .menu-item {
+            color: white;
+            padding: 15px 25px;
+            margin: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .menu-item:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+
+        .menu-item.active {
+            background-color: rgba(255, 255, 255, 0.3);
+            font-weight: bold;
+        }
+
+        .menu-item i {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+
+        .menu-link {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .menu-link:hover {
+            color: white;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 30px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .page-title {
+            font-size: 28px;
+            color: #1e3a8a;
+            font-weight: 600;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #3b82f6;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .patient-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .patient-info {
+            margin-bottom: 30px;
+        }
+
+        .patient-info table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .patient-info th {
+            text-align: left;
+            padding: 10px 15px;
+            width: 200px;
+            color: #1e3a8a;
+        }
+
+        .patient-info td {
+            padding: 10px 15px;
+        }
+
+        .images-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .image-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        .image-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .image-preview {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .image-details {
+            padding: 15px;
+        }
+
+        .image-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .image-date {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .action-btn {
+            display: inline-block;
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-align: center;
+            width: 100%;
+        }
+
+        .primary-btn {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .primary-btn:hover {
+            background-color: #2563eb;
+        }
+
+        .secondary-btn {
+            background-color: #e0e0e0;
+            color: #333;
+        }
+
+        .secondary-btn:hover {
+            background-color: #d0d0d0;
+        }
+
+        .no-images {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+        }
+
+        .logout-btn {
+            background-color: #ef4444;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            margin-left: 20px;
+        }
+
+        .logout-btn:hover {
+            background-color: #dc2626;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 10% auto;
+    padding: 25px;
+    border-radius: 10px;
+    width: 400px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.model-select {
+    width: 100%;
+    padding: 12px;
+    margin: 15px 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.confirm-btn {
+    padding: 10px 20px;
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.confirm-btn:hover {
+    background-color: #2563eb;
+}
+
+.cancel-btn {
+    padding: 10px 20px;
+    background-color: #e0e0e0;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.cancel-btn:hover {
+    background-color: #d0d0d0;
+}
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">MEDISCAN</div>
+        <div class="menu-item {% if request.path == url_for('doctor_dashboard') %}active{% endif %}">
+            <i class="fas fa-home"></i>
+            <a href="{{ url_for('doctor_dashboard') }}" class="menu-link">Dashboard</a>
+        </div>
+        <div class="menu-item {% if request.path == url_for('patients_list') %}active{% endif %}">
+            <i class="fas fa-user-injured"></i>
+            <a href="{{ url_for('patients_list') }}" class="menu-link">Patients</a>
+        </div>
+        <div class="menu-item {% if request.path == url_for('students_list') %}active{% endif %}">
+            <i class="fas fa-graduation-cap"></i>
+            <a href="{{ url_for('students_list') }}" class="menu-link">Students</a>
+        </div>
+        <div class="menu-item {% if request.path == url_for('upload_model') %}active{% endif %}">
+            <i class="fas fa-upload"></i>
+            <a href="{{ url_for('upload_model') }}" class="menu-link">Upload model</a>
+        </div>
+        <div class="menu-item {% if request.path == url_for('settings') %}active{% endif %}">
+            <i class="fas fa-cog"></i>
+            <a href="{{ url_for('settings') }}" class="menu-link">Settings</a>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <div class="page-title">{{ patient.name }} {{ patient.surname }}</div>
+            <div class="user-profile">
+                <div class="user-avatar">
+                    {{ session['user_name'].split()[0][0] }}{{ session['user_name'].split()[1][0] }}
+                </div>
+                <div>Dr. {{ session['user_name'] }}</div>
+                <a href="{{ url_for('logout') }}" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> Log out
+                </a>
+            </div>
+        </div>
+
+        <div class="patient-card">
+            <div class="patient-info">
+                <h2>Personal information</h2>
+                <table>
+                    <tr>
+                        <th>Date of birth</th>
+                        <td>{{ patient.birth_date }}</td>
+                    </tr>
+                    <tr>
+                        <th>Age</th>
+                        <td>{{ calculate_age(patient.birth_date) }} years</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="action-buttons">
+                <a href="{{ url_for('upload_image', patient_id=patient.id) }}" class="action-btn primary-btn">
+                    <i class="fas fa-upload"></i> Upload image
+                </a>
+                <a href="{{ url_for('patients_list') }}" class="action-btn secondary-btn">
+                    <i class="fas fa-arrow-left"></i> Back to list
+                </a>
+            </div>
+        </div>
+
+        <div class="patient-card">
+            <h2>Medical images</h2>
+
+            {% if images %}
+            <div class="images-grid">
+                {% for image in images %}
+                <div class="image-card">
+                    <img src="{{ url_for('static', filename='uploads/' + image.filename) }}"
+                         alt="Snímok pacienta"
+                         class="image-preview">
+                    <div class="image-details">
+                        <div class="image-name">{{ image.filename }}</div>
+                        <div class="image-date">{{ image.date }}</div>
+                        <a href="#"
+                           class="action-btn primary-btn analyze-btn"
+                           data-patient-id="{{ patient.id }}"
+                           data-image-id="{{ image.id }}">
+                            {% if image.analysis %}
+                                <i class="fas fa-redo"></i> Reanalyze
+                            {% else %}
+                                <i class="fas fa-search"></i> Analyze
+                            {% endif %}
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="no-images">
+                <i class="fas fa-image" style="font-size: 24px; margin-bottom: 10px;"></i>
+                <p>The patient has no uploaded images.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+<div id="modelModal" class="modal">
+    <div class="modal-content">
+        <h2>Select model</h2>
+        <select id="modelSelect" class="model-select">
+            {% for model in available_models %}
+            <option value="{{ model }}">{{ model }}</option>
+            {% endfor %}
+        </select>
+        <div class="modal-buttons">
+            <button id="cancelModalBtn" class="cancel-btn">Cancel</button>
+            <button id="confirmModalBtn" class="confirm-btn">Start analysis</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentImageId = null;
+let currentPatientId = null;
+
+function openModelModal(patientId, imageId) {
+    currentPatientId = patientId;
+    currentImageId = imageId;
+    document.getElementById('modelModal').style.display = 'block';
+}
+
+function startAnalysis() {
+    const selectedModel = document.getElementById('modelSelect').value;
+    sessionStorage.setItem('lastUsedModel', selectedModel);
+    window.location.href = `/analyze/${currentPatientId}/${currentImageId}?model=${encodeURIComponent(selectedModel)}`;
+}
+
+function closeModal() {
+    document.getElementById('modelModal').style.display = 'none';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.analyze-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const patientId = this.dataset.patientId;
+            const imageId = this.dataset.imageId;
+            openModelModal(patientId, imageId);
+        });
+    });
+
+    document.getElementById('confirmModalBtn').addEventListener('click', startAnalysis);
+    document.getElementById('cancelModalBtn').addEventListener('click', closeModal);
+});
+</script>
+</body>
+</html>

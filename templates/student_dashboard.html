@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Mediscan - Student Dashboard</title>
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+  />
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0; padding: 0;
+      background-color: #f5f9ff;
+      color: #333;
+    }
+    .sidebar {
+      width: 250px; height: 100vh;
+      background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+      position: fixed; top: 0; left: 0;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+      display: flex; flex-direction: column;
+      padding-top: 20px;
+    }
+    .logo {
+      color: #fff; font-size: 24px; font-weight: bold;
+      text-align: center; padding: 20px 0;
+      margin-bottom: 30px;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+    .menu-link {
+      display: flex;
+      align-items: center;
+      padding: 15px 25px;
+      margin: 5px 10px;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 5px;
+      transition: background-color .3s, transform .3s;
+    }
+    .menu-link i {
+      margin-right: 10px; font-size: 18px;
+    }
+    .menu-link:hover {
+      background-color: rgba(255,255,255,0.2);
+      transform: translateX(5px);
+    }
+    .menu-link.active {
+      background-color: rgba(255,255,255,0.3);
+      font-weight: bold;
+    }
+    .main-content {
+      margin-left: 250px;
+      padding: 30px;
+    }
+    .header {
+      display: flex; justify-content: space-between;
+      align-items: center; margin-bottom: 30px;
+    }
+    .page-title {
+      font-size: 28px; color: #1e3a8a; font-weight: 600;
+    }
+    .user-profile {
+      display: flex; align-items: center;
+    }
+    .user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: #3b82f6;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 10px;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    .logout-btn {
+      background-color: #ef4444;
+      color: white;
+      padding: 8px 15px;
+      border-radius: 5px;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 14px;
+      margin-left: 20px;
+      transition: background .2s;
+    }
+    .logout-btn:hover {
+      background-color: #dc2626;
+    }
+    .dashboard-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px,1fr));
+      gap: 20px;
+    }
+    .card {
+      background-color: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      transition: transform .3s, box-shadow .3s;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+    .card-title {
+      font-size: 18px; color: #1e3a8a;
+      margin-bottom: 15px; font-weight: 500;
+    }
+    .card-content {
+      color: #666; line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="logo">MEDISCAN</div>
+
+    <a href="{{ url_for('student_dashboard') }}"
+       class="menu-link {% if request.path == url_for('student_dashboard') %}active{% endif %}">
+      <i class="fas fa-home"></i> Dashboard
+    </a>
+
+    <a href="{{ url_for('assignments_list') }}"
+       class="menu-link {% if request.path == url_for('assignments_list') %}active{% endif %}">
+      <i class="fas fa-tasks"></i> Tests
+    </a>
+
+    <a href="{{ url_for('settings') }}"
+       class="menu-link {% if request.path == url_for('settings') %}active{% endif %}">
+      <i class="fas fa-cog"></i> Settings
+    </a>
+  </div>
+
+  <div class="main-content">
+    <div class="header">
+      <div class="page-title">Student Dashboard</div>
+      <div class="user-profile">
+        <div class="user-avatar">
+          {{ session['user_name'].split()[0][0] }}{{ session['user_name'].split()[1][0] }}
+        </div>
+        <div>{{ session['user_name'] }}</div>
+        <a href="{{ url_for('logout') }}" class="logout-btn">
+          <i class="fas fa-sign-out-alt"></i> Log out
+        </a>
+      </div>
+    </div>
+
+    <div class="dashboard-cards">
+      <div class="card">
+        <div class="card-title">Active tasks</div>
+        <div class="card-content">
+          You currently have {{ active_count }} активных заданий. The nearest deadline — {{ next_deadline }}.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Latest results</div>
+        <div class="card-content">
+          You have completed {{ recent_tests }} tests in the last week.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Notifications</div>
+        <div class="card-content">
+          New instructions from the teacher are available in the "Tests" section.
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

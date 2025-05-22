@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mediscan – Doctor Task List</title>
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* === Общие стили === */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0; padding: 0;
+            background-color: #f5f9ff;
+            color: #333;
+        }
+        .sidebar {
+            width: 250px; height: 100vh;
+            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+            position: fixed; padding-top: 20px;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+        .logo {
+            color: white; font-size: 24px; font-weight: bold;
+            text-align: center; padding: 20px 0;
+            margin-bottom: 30px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        .menu-item {
+            color: white; padding: 15px 25px; margin: 5px 10px;
+            border-radius: 5px; cursor: pointer;
+            display: flex; align-items: center;
+            transition: all .3s ease;
+        }
+        .menu-item:hover {
+            background-color: rgba(255,255,255,0.2);
+            transform: translateX(5px);
+        }
+        .menu-item.active {
+            background-color: rgba(255,255,255,0.3);
+            font-weight: bold;
+        }
+        .menu-item i {
+            margin-right: 10px; font-size: 18px;
+        }
+        .menu-link {
+            color: white; text-decoration: none;
+            display: flex; align-items: center;
+            width: 100%; height: 100%;
+        }
+        .main-content {
+            margin-left: 250px; padding: 30px;
+        }
+        .header,
+        .header-with-back {
+            display: flex; justify-content: space-between;
+            align-items: center; margin-bottom: 30px;
+        }
+        .page-title {
+            font-size: 28px; color: #1e3a8a;
+            font-weight: 600;
+        }
+        .btn-back {
+            background-color: #6b7280; color: white;
+            padding: 10px 20px; border-radius: 6px;
+            font-weight: 600; text-decoration: none;
+            display: flex; align-items: center; gap: 8px;
+            transition: background-color .2s ease;
+        }
+        .btn-back:hover {
+            background-color: #4b5563;
+        }
+        .user-profile {
+            display: flex; align-items: center;
+        }
+        .user-avatar {
+            width: 40px; height: 40px; border-radius: 50%;
+            background-color: #3b82f6; color: white;
+            display: flex; align-items: center; justify-content: center;
+            margin-right: 10px; font-weight: bold;
+        }
+        .logout-btn {
+            background-color: #ef4444; color: white;
+            padding: 10px 20px; border-radius: 5px;
+            text-decoration: none; font-weight: 500;
+            display: flex; align-items: center; gap: 8px;
+            transition: background-color .2s ease;
+        }
+        .logout-btn:hover {
+            background-color: #dc2626;
+        }
+
+        /* === Таблица заданий === */
+        .table-header {
+            display: flex; justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 10px 20px; border: none;
+            border-radius: 6px; font-weight: 500;
+            display: flex; align-items: center; gap: 8px;
+            cursor: pointer; transition: background-color .2s;
+            color: white; background-color: #3b82f6;
+            text-decoration: none;
+        }
+        .btn:hover {
+            background-color: #2563eb;
+        }
+        .assignments-table {
+            width: 100%; border-collapse: collapse;
+            background-color: white; border-radius: 10px;
+            overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .assignments-table th {
+            background-color: #1e3a8a; color: white;
+            padding: 15px; text-align: left;
+        }
+        .assignments-table td {
+            padding: 12px 15px; border-bottom: 1px solid #e0e0e0;
+        }
+        .assignment-status {
+            padding: 5px 10px; border-radius: 20px;
+            font-size: 12px; font-weight: 500;
+            white-space: nowrap;
+        }
+        .status-active {
+            background-color: #d1fae5; color: #065f46;
+        }
+        .status-completed {
+            background-color: #e0e7ff; color: #3730a3;
+        }
+        .status-expired {
+            background-color: #fee2e2; color: #991b1b;
+        }
+        .action-btn {
+            padding: 6px 12px; border-radius: 5px;
+            background-color: #3b82f6; color: white;
+            text-decoration: none; font-weight: 500;
+            display: inline-flex; align-items: center; gap: 6px;
+        }
+        .action-btn:hover {
+            background-color: #2563eb;
+        }
+    </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="logo">MEDISCAN</div>
+    <div class="menu-item {% if request.path == url_for('doctor_dashboard') %}active{% endif %}">
+      <i class="fas fa-home"></i>
+      <a href="{{ url_for('doctor_dashboard') }}" class="menu-link">Dashboard</a>
+    </div>
+    <div class="menu-item {% if request.path == url_for('patients_list') %}active{% endif %}">
+      <i class="fas fa-user-injured"></i>
+      <a href="{{ url_for('patients_list') }}" class="menu-link">Patients</a>
+    </div>
+    <div class="menu-item {% if request.path == url_for('students_list') %}active{% endif %}">
+      <i class="fas fa-graduation-cap"></i>
+      <a href="{{ url_for('students_list') }}" class="menu-link">Students</a>
+    </div>
+    <div class="menu-item {% if request.path == url_for('doctor_assignments_list') %}active{% endif %}">
+      <i class="fas fa-tasks"></i>
+      <a href="{{ url_for('doctor_assignments_list') }}" class="menu-link">Tasks</a>
+    </div>
+    <div class="menu-item {% if request.path == url_for('upload_model') %}active{% endif %}">
+      <i class="fas fa-upload"></i>
+      <a href="{{ url_for('upload_model') }}" class="menu-link">Upload model</a>
+    </div>
+    <div class="menu-item {% if request.path == url_for('settings') %}active{% endif %}">
+      <i class="fas fa-cog"></i>
+      <a href="{{ url_for('settings') }}" class="menu-link">Settings</a>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="header header-with-back">
+      <div class="page-title">Task List</div>
+      <a href="{{ url_for('students_list') }}" class="btn btn-back">
+        <i class="fas fa-arrow-left"></i> Back to Students
+      </a>
+    </div>
+
+    <div class="table-header">
+      <button type="button" class="btn" onclick="openModal('createAssignmentModal')">
+        <i class="fas fa-plus"></i> Create a test
+      </button>
+    </div>
+
+    <div class="table-container">
+      <table class="assignments-table">
+        <thead>
+          <tr>
+            <th>Popis</th>
+            <th>Model</th>
+            <th>Študenti</th>
+            <th>Termín</th>
+            <th>Stav</th>
+            <th>Akcie</th>
+          </tr>
+        </thead>
+        {% set now = datetime.now() %}
+        <tbody>
+          {% for assignment in assignments %}
+          <tr>
+            <td>{{ assignment.description|truncate(50) }}</td>
+            <td>{{ assignment.model_used }}</td>
+            <td>{{ assignment.student_count }} students</td>
+            <td>
+              {{ assignment.start_date|datetimeformat }}
+              – {{ assignment.end_date|datetimeformat }}
+            </td>
+            <td>
+              {% if now > assignment.end_date %}
+                <span class="assignment-status status-expired">Ended</span>
+              {% elif assignment.is_submitted %}
+                <span class="assignment-status status-completed">Done</span>
+              {% elif now >= assignment.start_date and now <= assignment.end_date %}
+                <span class="assignment-status status-active">Active</span>
+              {% else %}
+                <span class="assignment-status status-completed">Waiting</span>
+              {% endif %}
+            </td>
+            <td>
+              <a href="{{ url_for('doctor_assignment_detail', assignment_id=assignment.id) }}"
+                 class="action-btn view-btn">
+                <i class="fas fa-eye"></i> Show
+              </a>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6" style="text-align:center;">
+              No tasks have been created
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% include 'create_assignment_modal.html' %}
+
+  <script>
+    function openModal(id) {
+      document.getElementById(id).style.display = 'flex';
+    }
+  </script>
+</body>
+</html>

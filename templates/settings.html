@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Mediscan – Settings</title>
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+  />
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0; padding: 0;
+      background-color: #f5f9ff;
+      color: #333;
+    }
+    .sidebar {
+      width: 250px; height: 100vh;
+      background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+      position: fixed; top: 0; left: 0;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+      padding-top: 20px;
+    }
+    .logo {
+      color: white; font-size: 24px; font-weight: bold;
+      text-align: center; padding: 20px 0;
+      margin-bottom: 30px;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+    .menu-item {
+      margin: 5px 10px; border-radius: 5px;
+      transition: all .3s; display: flex; align-items: center;
+    }
+    .menu-item.active,
+    .menu-item:hover {
+      background-color: rgba(255,255,255,0.2);
+      transform: translateX(5px);
+    }
+    .menu-item i {
+      color: white; margin-right: 10px; font-size: 18px;
+    }
+    .menu-link {
+      color: white; text-decoration: none;
+      width: 100%; padding: 12px 0;
+      display: inline-block;
+      font-weight: 500;
+    }
+    .main-content {
+      margin-left: 250px; padding: 30px;
+    }
+    .header {
+      display: flex; justify-content: space-between;
+      align-items: center; margin-bottom: 30px;
+    }
+    .page-title {
+      font-size: 28px; color: #1e3a8a; font-weight: 600;
+    }
+    .user-profile {
+      display: flex; align-items: center;
+    }
+    .user-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background-color: #3b82f6; color: white;
+      display: flex; align-items: center; justify-content: center;
+      margin-right: 10px; font-weight: bold; font-size: 14px;
+    }
+    .logout-btn {
+      background-color: #ef4444; color: white;
+      padding: 8px 15px; border-radius: 5px;
+      text-decoration: none; font-weight: 500; font-size: 14px;
+      margin-left: 20px;
+      transition: background .2s;
+    }
+    .logout-btn:hover { background-color: #dc2626; }
+
+    .container {
+      background: white; padding: 20px;
+      border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .page-section-title {
+      font-size: 22px; color: #1e3a8a;
+      margin-bottom: 20px; font-weight: 600;
+    }
+    .card {
+      background: #fff; padding: 20px;
+      border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block; font-weight: 500; margin-bottom: 5px;
+    }
+    .form-group input {
+      width: 100%; padding: 8px 12px;
+      border: 1px solid #ccc; border-radius: 5px;
+      font-size: 14px;
+    }
+    .btn-submit {
+      background-color: #3b82f6; color: white;
+      padding: 10px 20px; border: none;
+      border-radius: 6px; font-weight: 600;
+      cursor: pointer; transition: background .2s;
+    }
+    .btn-submit:hover { background-color: #2563eb; }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="logo">MEDISCAN</div>
+    {% if session['user_role']=='doctor' %}
+      <div class="menu-item {% if request.path==url_for('doctor_dashboard') %}active{% endif %}">
+        <i class="fas fa-home"></i>
+        <a class="menu-link" href="{{ url_for('doctor_dashboard') }}">Dashboard</a>
+      </div>
+      <div class="menu-item {% if request.path==url_for('patients_list') %}active{% endif %}">
+        <i class="fas fa-user-injured"></i>
+        <a class="menu-link" href="{{ url_for('patients_list') }}">Patients</a>
+      </div>
+      <div class="menu-item {% if request.path==url_for('students_list') %}active{% endif %}">
+        <i class="fas fa-graduation-cap"></i>
+        <a class="menu-link" href="{{ url_for('students_list') }}">Students</a>
+      </div>
+      <div class="menu-item {% if request.path==url_for('doctor_assignments_list') %}active{% endif %}">
+        <i class="fas fa-tasks"></i>
+        <a class="menu-link" href="{{ url_for('doctor_assignments_list') }}">Tasks</a>
+      </div>
+      <div class="menu-item {% if request.path==url_for('upload_model') %}active{% endif %}">
+        <i class="fas fa-upload"></i>
+        <a class="menu-link" href="{{ url_for('upload_model') }}">Upload model</a>
+      </div>
+    {% else %}
+      <div class="menu-item {% if request.path==url_for('student_dashboard') %}active{% endif %}">
+        <i class="fas fa-home"></i>
+        <a class="menu-link" href="{{ url_for('student_dashboard') }}">Dashboard</a>
+      </div>
+      <div class="menu-item {% if request.path==url_for('assignments_list') %}active{% endif %}">
+        <i class="fas fa-tasks"></i>
+        <a class="menu-link" href="{{ url_for('assignments_list') }}">Tests</a>
+      </div>
+    {% endif %}
+    <div class="menu-item {% if request.path==url_for('settings') %}active{% endif %}">
+      <i class="fas fa-cog"></i>
+      <a class="menu-link" href="{{ url_for('settings') }}">Settings</a>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="header">
+      <div class="page-title">Settings</div>
+      <div class="user-profile">
+        <div class="user-avatar">
+          {{ session['user_name'].split()[0][0] }}{{ session['user_name'].split()[1][0] }}
+        </div>
+        <div>{{ session['user_name'] }}</div>
+        <a href="{{ url_for('logout') }}" class="logout-btn">
+          <i class="fas fa-sign-out-alt"></i> Log out
+        </a>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="page-section-title">Profile</div>
+      <div class="card">
+        <div class="form-group">
+          <label>Username</label>
+          <p>{{ session['username'] }}</p>
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          <p>{{ session['user_role'] }}</p>
+        </div>
+      </div>
+
+      <div class="page-section-title">Change Password</div>
+      <div class="card">
+        <form method="POST" action="{{ url_for('change_password') }}">
+          <div class="form-group">
+            <label>Old Password</label>
+            <input type="password" name="old_password" required>
+          </div>
+          <div class="form-group">
+            <label>New Password</label>
+            <input type="password" name="new_password" required>
+          </div>
+          <div class="form-group">
+            <label>Confirm Password</label>
+            <input type="password" name="confirm_password" required>
+          </div>
+          <div style="text-align:right;">
+            <button type="submit" class="btn-submit">
+              Save changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

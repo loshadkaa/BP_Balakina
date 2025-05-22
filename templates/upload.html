@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image analysis</title>
+    <style>
+        :root {
+            --med-blue: #005b96;
+            --med-light: #e1f5fe;
+            --med-dark: #012840;
+            --med-accent: #00838f;
+            --success: #4CAF50;
+            --warning: #FFC107;
+            --danger: #F44336;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--med-blue);
+            color: white;
+            padding: 15px 30px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 4px;
+            text-decoration: none;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-logout {
+            background-color: var(--danger);
+        }
+        .upload-section {
+            padding: 20px;
+            background-color: var(--med-light);
+            margin: 20px;
+            border-radius: 6px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .btn-submit {
+            background-color: var(--med-accent);
+            padding: 10px 20px;
+        }
+        .result-image {
+            max-width: 100%;
+            margin: 20px 0;
+            border: 1px solid #eee;
+        }
+        .action-buttons {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+        }
+        .btn-confirm {
+            background-color: var(--success);
+        }
+        .btn-retry {
+            background-color: var(--warning);
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: var(--med-light);
+        }
+        .alert {
+            padding: 15px;
+            margin: 20px;
+            border-radius: 4px;
+        }
+        .alert-success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+        .alert-error {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>MEDICAL IMAGE ANALYSIS</h1>
+            <a href="{{ url_for('logout') }}" class="btn btn-logout">LOG OUT</a>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="upload-section">
+            <h2>IMAGE UPLOAD</h2>
+            <form method="POST" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="file">Select file (JPG, PNG):</label>
+                    <input type="file" class="form-control" id="file" name="file" accept="image/*" required>
+                </div>
+                <button type="submit" class="btn btn-submit">START THE ANALYSIS</button>
+            </form>
+        </div>
+
+        {% if detections %}
+        <div class="results">
+            <h2>ANALYSIS RESULTS</h2>
+            <img src="{{ image_path }}" class="result-image" alt="Výsledok analýzy">
+
+            <h3>Detected anomalies:</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Level of certainty</th>
+                        <th>Coordinates</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for detection in detections %}
+                    <tr>
+                        <td>{{ detection['name'] }}</td>
+                        <td>{{ "%.1f"|format(detection['confidence'] * 100) }}%</td>
+                        <td>
+                            ({{ "%.0f"|format(detection['xmin']) }},
+                            {{ "%.0f"|format(detection['ymin']) }}) -
+                            ({{ "%.0f"|format(detection['xmax']) }},
+                            {{ "%.0f"|format(detection['ymax']) }})
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            {% if show_actions %}
+            <div class="action-buttons">
+                <form method="POST">
+                    <button type="submit" name="action" value="confirm" class="btn btn-confirm">
+                        CONFIRM RESULTS
+                    </button>
+                    <button type="submit" name="action" value="retry" class="btn btn-retry">
+                        REPEAT ANALYSIS
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

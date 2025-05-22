@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Mediscan – Assignment Detail</title>
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+  />
+  <style>
+    /* === Общие стили === */
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0; padding: 0;
+      background-color: #f5f9ff; color: #333;
+    }
+    .sidebar {
+      width: 250px; height: 100vh;
+      background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+      position: fixed; top: 0; left: 0;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+      display: flex; flex-direction: column;
+      padding-top: 20px;
+    }
+    .logo {
+      color: #fff; font-size: 24px; font-weight: bold;
+      text-align: center; padding: 20px 0;
+      margin-bottom: 30px;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+    .menu-link {
+      color: #fff; text-decoration: none;
+      display: flex; align-items: center;
+      padding: 12px 25px; margin: 5px 10px;
+      border-radius: 5px; transition: background .3s;
+    }
+    .menu-link i { margin-right: 10px; font-size: 18px; }
+    .menu-link.active,
+    .menu-link:hover {
+      background-color: rgba(255,255,255,0.2);
+    }
+    .main-content {
+      margin-left: 250px; padding: 30px;
+    }
+    .header {
+      display: flex; justify-content: space-between;
+      align-items: center; margin-bottom: 30px;
+    }
+    .page-title {
+      font-size: 28px; color: #1e3a8a; font-weight: 600;
+    }
+    .user-profile {
+      display: flex; align-items: center;
+    }
+    .user-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background-color: #3b82f6; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      margin-right: 10px; font-weight: bold; font-size: 14px;
+    }
+    .logout-btn {
+      background-color: #ef4444; color: #fff;
+      padding: 8px 15px; border-radius: 5px;
+      text-decoration: none; font-weight: 500; font-size: 14px;
+      transition: background .2s; margin-left: 20px;
+    }
+    .logout-btn:hover { background-color: #dc2626; }
+
+    .container {
+      max-width: 800px; margin: 0 auto;
+      background: #fff; border-radius: 10px;
+      padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .back-btn {
+      display: inline-block; margin-bottom: 20px;
+      padding: 8px 16px; background: #3b82f6; color: #fff;
+      border-radius: 5px; text-decoration: none;
+      transition: background .2s;
+    }
+    .back-btn:hover { background: #2563eb; }
+
+    .assignment-title {
+      font-size: 22px; color: #1e3a8a;
+      margin-bottom: 15px;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit,minmax(150px,1fr));
+      gap: 15px; margin-bottom: 20px;
+    }
+    .info-grid div h4 {
+      margin: 0 0 5px; font-size: 14px; color: #555;
+    }
+    .info-grid div p {
+      margin: 0; font-size: 16px; color: #333; font-weight: 500;
+    }
+
+    .image-gallery {
+      display: flex; flex-wrap: wrap; gap: 10px;
+      margin-bottom: 20px;
+    }
+    .image-thumbnail {
+      flex: 1 1 calc(33% - 10px);
+      max-width: calc(33% - 10px);
+      background: #f9fafb; padding: 5px;
+      border-radius: 5px; text-align: center;
+    }
+    .image-thumbnail img {
+      width: 100%; height: auto; border-radius: 4px;
+    }
+
+    /* === Результаты теста === */
+    .results-section {
+      margin-top: 30px;
+    }
+    .results-section h3 {
+      margin-bottom: 15px; color: #1e3a8a; font-size: 20px;
+    }
+    .results-table {
+      width: 100%; border-collapse: collapse;
+      background: #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+    .results-table th, .results-table td {
+      padding: 12px 15px; text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    .results-table th {
+      background-color: #1e3a8a; color: #fff;
+    }
+    .btn-approve, .btn-reject {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px; font-size: 14px; font-weight: 600;
+      border: none; border-radius: 6px; cursor: pointer;
+      transition: background .2s, transform .2s;
+      color: #fff; text-decoration: none;
+    }
+    .btn-approve {
+      background-color: #10b981;
+    }
+    .btn-approve:hover {
+      background-color: #0e9e6e; transform: translateY(-1px);
+    }
+    .btn-reject {
+      background-color: #ef4444;
+    }
+    .btn-reject:hover {
+      background-color: #dc2626; transform: translateY(-1px);
+    }
+    .status-not-submitted {
+      color: #9ca3af; font-style: italic;
+    }
+    .results-table img {
+      border-radius: 4px;
+      vertical-align: middle;
+    }
+    /* overlay */
+#lightboxOverlay {
+  position: fixed; top:0; left:0; width:100%; height:100%;
+  background: rgba(0,0,0,0.9); display:flex;
+  align-items:center; justify-content:center;
+  z-index:10000;
+}
+/* закрывашка */
+.lb-close {
+  position:absolute; top:20px; right:30px;
+  color:#fff; font-size:36px; cursor:pointer;
+}
+/* сама картинка */
+#lightboxImage {
+  max-width:90%; max-height:90%; border-radius:4px;
+}
+/* навигационные стрелки */
+.lb-nav {
+  position:absolute; top:50%; transform:translateY(-50%);
+  background:none; border:none; color:#fff; font-size:48px;
+  cursor:pointer; padding:0 10px;
+}
+.lb-prev { left:30px; }
+.lb-next { right:30px; }
+
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="logo">MEDISCAN</div>
+    <a href="{{ url_for('doctor_dashboard') }}"
+       class="menu-link {% if request.path==url_for('doctor_dashboard') %}active{% endif %}">
+      <i class="fas fa-home"></i> Dashboard
+    </a>
+    <a href="{{ url_for('patients_list') }}"
+       class="menu-link {% if request.path==url_for('patients_list') %}active{% endif %}">
+      <i class="fas fa-user-injured"></i> Patients
+    </a>
+    <a href="{{ url_for('students_list') }}"
+       class="menu-link {% if request.path==url_for('students_list') %}active{% endif %}">
+      <i class="fas fa-graduation-cap"></i> Students
+    </a>
+    <a href="{{ url_for('doctor_assignments_list') }}"
+       class="menu-link {% if request.path==url_for('doctor_assignments_list') %}active{% endif %}">
+      <i class="fas fa-tasks"></i> Tasks
+    </a>
+    <a href="{{ url_for('upload_model') }}"
+       class="menu-link {% if request.path==url_for('upload_model') %}active{% endif %}">
+      <i class="fas fa-upload"></i> Upload model
+    </a>
+    <a href="{{ url_for('settings') }}"
+       class="menu-link {% if request.path==url_for('settings') %}active{% endif %}">
+      <i class="fas fa-cog"></i> Settings
+    </a>
+  </div>
+
+  <div class="main-content">
+    <div class="header">
+      <div class="page-title">Assignment Detail</div>
+      <div class="user-profile">
+        <div class="user-avatar">
+          {{ session['user_name'].split()[0][0] }}{{ session['user_name'].split()[1][0] }}
+        </div>
+        <div>{{ session['user_name'] }}</div>
+        <a href="{{ url_for('logout') }}" class="logout-btn">
+          <i class="fas fa-sign-out-alt"></i> Log out
+        </a>
+      </div>
+    </div>
+
+    <div class="container">
+      <a href="{{ url_for('doctor_assignments_list') }}" class="back-btn">
+        <i class="fas fa-arrow-left"></i> Back to Tasks
+      </a>
+
+      <div class="assignment-title">{{ assignment.description }}</div>
+
+      <div class="info-grid">
+        <div>
+          <h4>Model</h4>
+          <p>{{ assignment.model_used }}</p>
+        </div>
+        <div>
+          <h4>Start</h4>
+          <p>{{ assignment.start_date|datetimeformat }}</p>
+        </div>
+        <div>
+          <h4>End</h4>
+          <p>{{ assignment.end_date|datetimeformat }}</p>
+        </div>
+        <div>
+          <h4>Created by</h4>
+          <p>{{ assignment.creator_name }} {{ assignment.creator_surname }}</p>
+        </div>
+      </div>
+
+      <div class="image-gallery">
+        {% for img in images %}
+        <div class="image-thumbnail">
+          <img src="{{ url_for('static', filename='uploads/' + img.filename) }}" alt="image">
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="results-section">
+        <h3>Submissions &amp; Actions</h3>
+        <thead>
+  <tr>
+    <th>Student</th>
+    <th>Score</th>
+    <th>Submitted at</th>
+    <th>Preview</th>          <!-- новая колонка -->
+    <th>Action</th>
+  </tr>
+</thead>
+    <tbody>
+      {% for r in results %}
+      <tr>
+        <td>{{ r.student_name }}</td>
+        <td>{{ r.score }} %</td>
+        <td>{{ r.submitted_at|datetimeformat }}</td>
+        <td>
+          {% if r.combined_images %}
+            {% set imgs = r.combined_images.values()|list %}
+            {% for fname in imgs %}
+              <img
+                src="{{ url_for('static', filename='uploads/' + fname) }}"
+                class="thumb"
+                style="max-width:80px; margin-right:5px; cursor:pointer; border:1px solid #ccc;"
+                onclick='openLightbox({{ imgs|tojson }}, {{ loop.index0 }})'
+              />
+            {% endfor %}
+          {% else %}
+            —
+          {% endif %}
+        </td>
+        <td>
+          <form method="post"
+                action="{{ url_for('confirm_test_result', result_id=r.id) }}"
+                style="display:inline-block; margin-right:5px">
+            <button type="submit" class="btn-approve">
+              <i class="fas fa-check"></i> Approve
+            </button>
+          </form>
+          <form method="post"
+                action="{{ url_for('reject_test_result', result_id=r.id) }}"
+                style="display:inline-block">
+            <button type="submit" class="btn-reject">
+              <i class="fas fa-times"></i> Reject
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="5" class="status-not-submitted">
+          No submissions yet.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="lightboxOverlay" style="display:none;">
+  <span class="lb-close" onclick="closeLightbox()">×</span>
+  <button class="lb-nav lb-prev" onclick="prevImage()">❮</button>
+  <img id="lightboxImage"/>
+  <button class="lb-nav lb-next" onclick="nextImage()">❯</button>
+</div>
+
+<script>
+  let lbImages = [], lbIndex = 0;
+
+  function openLightbox(images, index) {
+    lbImages = images;
+    lbIndex  = index;
+    document.getElementById('lightboxImage').src =
+      '/static/uploads/' + lbImages[lbIndex];
+    document.getElementById('lightboxOverlay').style.display = 'flex';
+  }
+
+  function closeLightbox() {
+    document.getElementById('lightboxOverlay').style.display = 'none';
+  }
+
+  function prevImage() {
+    lbIndex = (lbIndex - 1 + lbImages.length) % lbImages.length;
+    document.getElementById('lightboxImage').src =
+      '/static/uploads/' + lbImages[lbIndex];
+  }
+
+  function nextImage() {
+    lbIndex = (lbIndex + 1) % lbImages.length;
+    document.getElementById('lightboxImage').src =
+      '/static/uploads/' + lbImages[lbIndex];
+  }
+
+  // Закрыть ESC
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowLeft') prevImage();
+    if (e.key === 'ArrowRight') nextImage();
+  });
+</script>
+
+</body>
+</html>

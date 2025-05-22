@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Test results</title>
+    <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0; padding: 0;
+      background-color: #f5f9ff;
+      color: #333;
+    }
+    .sidebar {
+      width: 250px; height: 100vh;
+      background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+      position: fixed; top: 0; left: 0;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+      display: flex; flex-direction: column;
+      padding-top: 20px;
+    }
+    .logo {
+      color: #fff; font-size: 24px; font-weight: bold;
+      text-align: center; padding: 20px 0;
+      margin-bottom: 30px;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+    .menu-link {
+      display: flex;
+      align-items: center;
+      padding: 15px 25px;
+      margin: 5px 10px;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 5px;
+      transition: background-color .3s, transform .3s;
+    }
+    .menu-link i {
+      margin-right: 10px; font-size: 18px;
+    }
+    .menu-link:hover {
+      background-color: rgba(255,255,255,0.2);
+      transform: translateX(5px);
+    }
+    .menu-link.active {
+      background-color: rgba(255,255,255,0.3);
+      font-weight: bold;
+    }
+    .main-content {
+      margin-left: 250px;
+      padding: 30px;
+    }
+    .header {
+      display: flex; justify-content: space-between;
+      align-items: center; margin-bottom: 30px;
+    }
+    .page-title {
+      font-size: 28px; color: #1e3a8a; font-weight: 600;
+    }
+    .user-profile-header {
+      display: flex; align-items: center;
+    }
+    .user-avatar {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background-color: #3b82f6;
+      color: #fff; display: flex;
+      align-items: center; justify-content: center;
+      margin-right: 10px; font-weight: bold;
+      font-size: 14px;
+    }
+    .logout-btn {
+      background-color: #ef4444;
+      color: #fff; padding: 8px 15px;
+      border-radius: 5px; text-decoration: none;
+      font-weight: 500; font-size: 14px;
+      transition: background .2s;
+      margin-left: 20px;
+    }
+    .logout-btn:hover {
+      background-color: #dc2626;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 10px;
+      color: #1e3a8a;
+    }
+    .overall-score {
+      text-align: center;
+      font-size: 1.2em;
+      margin-bottom: 30px;
+      color: #666;
+    }
+    .image-block {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      padding: 20px;
+      margin-bottom: 30px;
+      border: 1px solid #e2e8f0;
+    }
+    .image-block h4 {
+      margin: 0 0 10px;
+      font-size: 1em;
+      text-align: center;
+      color: #1e3a8a;
+    }
+    .canvas-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .canvas-wrapper img,
+    .canvas-wrapper canvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    .image-block p {
+      text-align: center;
+      font-weight: 600;
+      margin-top: 15px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="logo">MEDISCAN</div>
+
+    <a href="{{ url_for('student_dashboard') }}"
+       class="menu-link {% if request.path == url_for('student_dashboard') %}active{% endif %}">
+      <i class="fas fa-home"></i> Dashboard
+    </a>
+
+    <a href="{{ url_for('assignments_list') }}"
+       class="menu-link {% if request.path == url_for('assignments_list') %}active{% endif %}">
+      <i class="fas fa-tasks"></i> Tests
+    </a>
+
+    <a href="{{ url_for('settings') }}"
+       class="menu-link {% if request.path == url_for('settings') %}active{% endif %}">
+      <i class="fas fa-cog"></i> Settings
+    </a>
+  </div>
+
+  <div class="main-content">
+    <div class="header">
+      <div>
+        <div class="page-title">Test Results</div>
+      </div>
+      <div class="user-profile-header">
+        <div class="user-avatar">
+          {{ session['user_name'].split()[0][0] }}{{ session['user_name'].split()[1][0] }}
+        </div>
+        <div>{{ session['user_name'] }}</div>
+        <a href="{{ url_for('logout') }}" class="logout-btn">
+          <i class="fas fa-sign-out-alt"></i> Log out
+        </a>
+      </div>
+    </div>
+
+    <div class="container">
+      <a href="{{ url_for('assignments_list') }}" class="back-btn">
+        <i class="fas fa-arrow-left"></i> Back
+      </a>
+
+  {% if status == 'approved' %}
+    <div style="padding:10px; margin:20px 0; background:#d1fae5; color:#065f46; border-radius:6px;">
+      ✅ Your result has been confirmed by a doctor..
+    </div>
+  {% elif status == 'rejected' %}
+    <div style="padding:10px; margin:20px 0; background:#fee2e2; color:#991b1b; border-radius:6px;">
+      ❌ Your result has been rejected by your doctor..
+    </div>
+  {% else %}
+    <div style="padding:10px; margin:20px 0; background:#e0e7ff; color:#3730a3; border-radius:6px;">
+      ⏳ Your result is awaiting confirmation from your doctor..
+    </div>
+  {% endif %}
+
+    <div class="container">
+      <h2>Result</h2>
+      <div class="overall-score">Overall rating: {{ score }}%</div>
+
+      {% for image in images %}
+      <div class="image-block">
+        <h4>Image: {{ image.filename }}</h4>
+        <div class="canvas-wrapper">
+          <img
+            id="img{{ loop.index }}"
+            src="{{ url_for('static', filename='uploads/' + image.filename) }}"
+            onload="drawRects({{ loop.index }})"
+            alt="Test image {{ loop.index }}"
+          >
+          <canvas id="canvas{{ loop.index }}"></canvas>
+        </div>
+        <p>Image rating: {{ image.score }}%</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <script>
+    const imagesData = {{ images | tojson }};
+
+    function drawRects(index) {
+      const img    = document.getElementById("img" + index);
+      const canvas = document.getElementById("canvas" + index);
+      const ctx    = canvas.getContext("2d");
+      const data   = imagesData[index - 1];
+
+      canvas.width  = img.clientWidth;
+      canvas.height = img.clientHeight;
+
+      const scaleX = img.clientWidth  / img.naturalWidth;
+      const scaleY = img.clientHeight / img.naturalHeight;
+
+      function drawRect(r, color) {
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth   = 2;
+        ctx.rect(
+          r.x * scaleX,
+          r.y * scaleY,
+          r.width  * scaleX,
+          r.height * scaleY
+        );
+        ctx.stroke();
+      }
+
+      // Model = blue
+      (data.model_rects    || []).forEach(r => drawRect(r, "blue"));
+      // Intersection = green
+      (data.intersections  || []).forEach(r => drawRect(r, "limegreen"));
+      // Student = red
+      (data.student_rects  || []).forEach(r => drawRect(r, "red"));
+    }
+  </script>
+</body>
+</html>

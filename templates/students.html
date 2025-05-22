@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mediscan - List of students</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0; padding: 0;
+            background-color: #f5f9ff;
+            color: #333;
+        }
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+            position: fixed;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            padding-top: 20px;
+        }
+        .logo {
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        .menu-item {
+            color: white;
+            padding: 15px 25px;
+            margin: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+        .menu-item:hover {
+            background-color: rgba(255,255,255,0.2);
+            transform: translateX(5px);
+        }
+        .menu-item.active {
+            background-color: rgba(255,255,255,0.3);
+            font-weight: bold;
+        }
+        .menu-item i {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+        .menu-link {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+        .menu-link:hover {
+            color: white;
+        }
+        .main-content {
+            margin-left: 250px;
+            padding: 30px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .page-title {
+            font-size: 28px;
+            color: #1e3a8a;
+            font-weight: 600;
+        }
+        .user-profile {
+            display: flex;
+            align-items: center;
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #3b82f6;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .patients-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .patients-table th {
+            background-color: #1e3a8a;
+            color: white;
+            padding: 15px;
+            text-align: left;
+        }
+        .patients-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .patients-table tr:last-child td {
+            border-bottom: none;
+        }
+        .patients-table tr:hover {
+            background-color: #f0f7ff;
+        }
+        .action-btn {
+            padding: 8px 15px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        .view-btn {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .view-btn:hover {
+            background-color: #2563eb;
+        }
+        .logout-btn {
+            background-color: #ef4444;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .logout-btn:hover {
+            background-color: #dc2626;
+        }
+        .table-header > div {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            border: none;
+            text-decoration: none;
+        }
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2563eb;
+        }
+
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          display: none;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+        }
+
+        .modal-overlay.show {
+          display: flex;
+        }
+
+        .modal {
+          background: white;
+          border-radius: 8px;
+          padding: 25px;
+          width: 100%;
+          max-width: 700px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        }
+
+.modal h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #1e3a8a;
+    font-size: 22px;
+}
+
+.modal label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #333;
+}
+
+.modal input {
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.modal input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn {
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    font-size: 14px;
+}
+
+.btn-primary {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #2563eb;
+}
+
+.btn-secondary {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+.btn-secondary:hover {
+    background-color: #e0e0e0;
+}
+
+.form-section {
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.form-section h3 {
+  margin-top: 0;
+  color: #1e3a8a;
+  font-size: 16px;
+}
+
+.image-upload-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.upload-area {
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.upload-area:hover {
+  border-color: #3b82f6;
+  background-color: #f5f9ff;
+}
+
+.image-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.image-preview img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.form-textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  resize: vertical;
+  min-height: 100px;
+}
+
+.form-select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.students-select {
+  max-height: 150px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+}
+
+.student-checkbox {
+  display: block;
+  padding: 8px;
+  margin: 5px 0;
+  background: #f9f9f9;
+  border-radius: 4px;
+}
+
+.student-checkbox:hover {
+  background: #f0f7ff;
+}
+
+.date-section {
+  display: flex;
+  gap: 20px;
+}
+
+.date-section > div {
+  flex: 1;
+}
+
+.form-date {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.students-select-container {
+    border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.students-select-header {
+  padding: 10px;
+  background: #f5f5f5;
+  border-bottom: 1px solid #ddd;
+}
+
+.students-select-scroll {
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.select-all-checkbox {
+  display: block;
+  padding: 8px;
+  margin: 5px 0;
+  background: #f9f9f9;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.student-checkbox:hover {
+  background: #f0f7ff;
+}
+
+.select-all-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.form-select, .form-date, .form-textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+.form-textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* Кнопки */
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+}
+
+.btn {
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.btn-primary {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #2563eb;
+}
+
+.btn-secondary {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.btn-secondary:hover {
+  background-color: #e0e0e0;
+}
+
+.image-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 5px;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.image-preview img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">MEDISCAN</div>
+        <div class="menu-item {% if request.path == url_for('doctor_dashboard') %}active{% endif %}">
+            <i class="fas fa-home"></i>
+            <a href="{{ url_for('doctor_dashboard') }}" class="menu-link">Dashboard</a>
+        </div>
+        <div class="menu-item {% if request.path == url_for('patients_list') %}active{% endif %}">
+            <i class="fas fa-user-injured"></i>
+            <a href="{{ url_for('patients_list') }}" class="menu-link">Patients</a>
+        </div>
+        <div class="menu-item {% if request.path == url_for('students_list') %}active{% endif %}">
+            <i class="fas fa-graduation-cap"></i>
+            <a href="{{ url_for('students_list') }}" class="menu-link">Students</a>
+        </div>
+        <div class="menu-item {% if request.path == url_for('upload_model') %}active{% endif %}">
+            <i class="fas fa-upload"></i>
+            <a href="{{ url_for('upload_model') }}" class="menu-link">Upload model</a>
+        </div>
+        <div class="menu-item {% if request.path == url_for('settings') %}active{% endif %}">
+            <i class="fas fa-cog"></i>
+            <a href="{{ url_for('settings') }}" class="menu-link">Settings</a>
+        </div>
+    </div>
+
+    <div class="main-content">
+    <div class="header">
+        <div class="page-title">List of students</div>
+        <div class="user-profile">
+            <div class="user-avatar">
+                {{ session['user_name'].split()[0][0] }}{{ session['user_name'].split()[1][0] }}
+            </div>
+            <div>Dr. {{ session['user_name'] }}</div>
+            <a href="{{ url_for('logout') }}" class="logout-btn" style="margin-left: 20px;">
+                <i class="fas fa-sign-out-alt"></i> Log out
+            </a>
+        </div>
+    </div>
+
+        <div class="table-header">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="openModal('addStudentModal')">
+                    <i class="fas fa-plus"></i> Add student
+                </button>
+
+                <button class="btn btn-primary" onclick="openModal('createAssignmentModal')">
+                    <i class="fas fa-tasks"></i> Create a test
+                </button>
+
+                <a href="{{ url_for('doctor_assignments_list') }}" class="btn btn-secondary" style="align-self: center;">
+                    <i class="fas fa-list"></i> View test
+                </a>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="patients-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Surname</th>
+                        <th>Groupe</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr>
+                        <td>{{ student.name }}</td>
+                        <td>{{ student.surname }}</td>
+                        <td>{{ student.skupina }}</td>
+                        <td>
+                            <a href="{{ url_for('student_detail', student_id=student.id) }}" class="action-btn view-btn">
+                                <i class="fas fa-eye"></i> Show
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+<div id="addStudentModal" class="modal-overlay">
+  <div class="modal">
+    <h2>Add a new student</h2>
+    <form method="POST" action="{{ url_for('add_student') }}">
+      <label for="name">Name:</label>
+      <input type="text" id="name" name="name" required>
+
+      <label for="surname">Surname:</label>
+      <input type="text" id="surname" name="surname" required>
+
+      <label for="skupina">Groupe:</label>
+      <input type="text" id="skupina" name="skupina" required>
+
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email" required>
+
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password" required>
+
+      <div class="modal-buttons">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('addStudentModal')">Cansel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="table-header">
+    <button class="btn btn-primary" onclick="openModal('createAssignmentModal')">
+        <i class="fas fa-plus"></i> Create a test
+    </button>
+</div>
+
+<div id="createAssignmentModal" class="modal-overlay">
+  <div class="modal" style="max-width: 700px; height: 80vh; display: flex; flex-direction: column;">
+    <h2>Create a new test</h2>
+    <form method="POST" action="{{ url_for('create_assignment') }}" enctype="multipart/form-data" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+
+      <div style="flex: 1; overflow-y: auto; padding-right: 10px;">
+        <div class="form-section">
+          <h3>The images</h3>
+          <div class="image-upload-container">
+            <label class="upload-area" id="uploadArea">
+              <input type="file" id="imageUpload" name="images" multiple accept="image/*" style="display: none;">
+              <i class="fas fa-cloud-upload-alt" style="font-size: 24px; margin-bottom: 10px;"></i>
+              <p>Click to upload images</p>
+              <small>(You can upload one or more images)</small>
+            </label>
+            <div class="image-preview" id="imagePreview" style="max-height: 150px; overflow-y: auto;"></div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Description</h3>
+          <textarea name="description" rows="4" placeholder="Enter a description of your symptoms..." class="form-textarea"></textarea>
+        </div>
+
+        <div class="form-section">
+          <h3>Model</h3>
+          <div class="model-select-container">
+            <select name="model" class="form-select" required>
+              <option value="">-- Select model --</option>
+              {% for model in models %}
+              <option value="{{ model }}" {% if selected_model == model %}selected{% endif %}>{{ model }}</option>
+              {% endfor %}
+            </select>
+            <div class="model-info">
+              {% if not models %}
+              <small style="color: #ef4444;">
+                <i class="fas fa-exclamation-circle"></i> First, upload the model in the "Upload Model" section."
+              </small>
+              {% else %}
+              <small>Available models: {{ models|length }}</small>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <h3>Students</h3>
+          <div class="students-select-container">
+            <div class="students-select-header">
+              <label class="select-all-checkbox">
+                <input type="checkbox" id="selectAllStudents" onchange="selectAllStudents(this.checked)">
+                Select all
+              </label>
+            </div>
+            <div class="students-select-scroll">
+              {% for student in students %}
+              <label class="student-checkbox">
+                <input type="checkbox" name="students" value="{{ student.id }}">
+                {{ student.name }} {{ student.surname }} ({{ student.skupina }})
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section date-section">
+          <div>
+            <h3>Start date</h3>
+            <input type="datetime-local" name="start_date" class="form-date" required>
+          </div>
+          <div>
+            <h3>End date</h3>
+            <input type="datetime-local" name="end_date" class="form-date" required>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-buttons" style="margin-top: 15px;">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('createAssignmentModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary" {% if not models %}disabled{% endif %}>Create a test</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<script>
+function openModal(id) {
+    document.getElementById(id).style.display = 'flex';
+}
+
+function closeModal(id) {
+    document.getElementById(id).style.display = 'none';
+}
+
+document.querySelectorAll('.btn.btn-primary').forEach(button => {
+    button.addEventListener('click', function (e) {
+        const modalTarget = this.getAttribute('onclick');
+        if (modalTarget && modalTarget.includes('addStudentModal')) {
+            e.preventDefault();
+            openModal('addStudentModal');
+        }
+    });
+});
+
+document.getElementById('imageUpload')?.addEventListener('change', function (e) {
+    const preview = document.getElementById('imagePreview');
+    preview.innerHTML = '';
+
+    if (this.files && this.files.length > 0) {
+        Array.from(this.files).forEach(file => {
+            const reader = new FileReader();
+
+            reader.onload = function (event) {
+                const img = document.createElement('img');
+                img.src = event.target.result;
+                preview.appendChild(img);
+            }
+
+            reader.readAsDataURL(file);
+        });
+
+        const uploadArea = document.getElementById('uploadArea');
+        uploadArea.querySelector('p').textContent = `Selected files: ${this.files.length}`;
+        uploadArea.querySelector('small').textContent = `(Click to change)`;
+    }
+});
+
+function selectAllStudents(selectAll) {
+    const checkboxes = document.querySelectorAll('.students-select-scroll .student-checkbox input');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAll;
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const modelSelect = document.querySelector('#createAssignmentModal select[name="model"]');
+    const submitBtn = document.querySelector('#createAssignmentModal button[type="submit"]');
+
+    if (modelSelect && modelSelect.options.length <= 1) {
+        submitBtn.disabled = true;
+    }
+});
+
+document.querySelector('#addStudentModal form')?.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    const form = e.target;
+    const formData = new FormData(form);
+
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'It is saved...';
+
+    try {
+        const response = await fetch(form.action, {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            const tableBody = document.querySelector('.patients-table tbody');
+            const newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td>${result.student.name}</td>
+                <td>${result.student.surname}</td>
+                <td>${result.student.skupina}</td>
+                <td>
+                    <a href="/student/${result.student.id}" class="action-btn view-btn">
+                        <i class="fas fa-eye"></i> Zobraziť
+                    </a>
+                </td>
+            `;
+            tableBody.appendChild(newRow);
+            form.reset();
+            closeModal('addStudentModal');
+        } else {
+            alert(result.message || 'Error saving student.');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Connection error.');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save';
+    }
+});
+</script>
+
+</body>
+</html>

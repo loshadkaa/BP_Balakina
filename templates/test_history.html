@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Mediscan – Test History</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0; padding: 0;
+      background-color: #f5f9ff; color: #333;
+    }
+    .sidebar {
+      width: 250px; height: 100vh;
+      background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+      position: fixed; top: 0; left: 0;
+      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+      padding-top: 20px;
+    }
+    .logo {
+      color: #fff; font-size: 24px; font-weight: bold;
+      text-align: center; padding: 20px 0;
+      margin-bottom: 30px;
+      border-bottom: 1px solid rgba(255,255,255,0.2);
+    }
+    .menu-link {
+      display: flex; align-items: center;
+      padding: 15px 25px; margin: 5px 10px;
+      color: #fff; text-decoration: none;
+      border-radius: 5px; transition: background .3s;
+    }
+    .menu-link i { margin-right: 10px; font-size: 18px; }
+    .menu-link:hover,
+    .menu-link.active {
+      background-color: rgba(255,255,255,0.2);
+    }
+    .main-content {
+      margin-left: 250px; padding: 30px;
+    }
+    .header {
+      display: flex; justify-content: space-between;
+      align-items: center; margin-bottom: 30px;
+    }
+    .page-title {
+      font-size: 28px; color: #1e3a8a; font-weight: 600;
+    }
+    .user-profile {
+      display: flex; align-items: center;
+    }
+    .user-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background-color: #3b82f6; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      margin-right: 10px; font-weight: bold;
+    }
+    .logout-btn {
+      background-color: #ef4444; color: #fff;
+      padding: 8px 15px; border-radius: 5px;
+      text-decoration: none; font-weight: 500;
+      font-size: 14px; margin-left: 20px;
+      transition: background .2s;
+    }
+    .logout-btn:hover { background-color: #dc2626; }
+    .history-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill,minmax(300px,1fr));
+      gap: 20px;
+    }
+    .card {
+      background: #fff; border-radius: 10px;
+      padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    .card-title {
+      font-size: 18px; color: #1e3a8a;
+      margin-bottom: 10px; font-weight: 500;
+    }
+    .card-content {
+      color: #555; line-height: 1.5; margin-bottom: 15px;
+    }
+    .card-buttons {
+      display: flex; gap: 10px; align-items: center;
+    }
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: 6px;
+      text-decoration: none; color: #fff;
+      font-weight: 600; font-size: 14px;
+      transition: background .2s, transform .2s;
+      border: none; cursor: pointer;
+    }
+    .btn-result {
+      background-color: #3b82f6;
+    }
+    .btn-result:hover {
+      background-color: #2563eb; transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(59,130,246,0.4);
+    }
+    .note-missed {
+      color: #ef4444; font-weight: 600;
+    }
+    h2.section-title {
+      color: #1e3a8a; margin-top: 0; margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="logo">MEDISCAN</div>
+    <a href="{{ url_for('student_dashboard') }}" class="menu-link">
+      <i class="fas fa-home"></i> Dashboard
+    </a>
+    <a href="{{ url_for('assignments_list') }}" class="menu-link">
+      <i class="fas fa-tasks"></i> Tests
+    </a>
+    <a href="{{ url_for('settings') }}" class="menu-link">
+      <i class="fas fa-cog"></i> Settings
+    </a>
+  </div>
+
+  <div class="main-content">
+    <div class="header">
+      <div class="page-title">Test history</div>
+      <div class="user-profile">
+        <div class="user-avatar">
+          {{ session['user_name'].split()[0][0] }}{{ session['user_name'].split()[1][0] }}
+        </div>
+        <div>{{ session['user_name'] }}</div>
+        <a href="{{ url_for('logout') }}" class="logout-btn">
+          <i class="fas fa-sign-out-alt"></i> Log out
+        </a>
+      </div>
+    </div>
+
+    <h2 class="section-title">Completed tests</h2>
+    <div class="history-cards">
+      {% for a in history %}
+        <div class="card">
+          <div class="card-title">{{ a.description }}</div>
+          <div class="card-content">
+            Model: <strong>{{ a.model_used }}</strong><br>
+            Ended in: {{ a.end_date|datetimeformat }}
+          </div>
+          <div class="card-buttons">
+            {% if a.result_id %}
+              <a href="{{ url_for('test_result_view', result_id=a.result_id) }}"
+                 class="btn btn-result">
+                <i class="fas fa-chart-line"></i> Result: {{ a.score }}%
+              </a>
+            {% else %}
+              <span class="note-missed">
+                <i class="fas fa-exclamation-circle"></i> Failed to submit (deadline expired)
+              </span>
+            {% endif %}
+          </div>
+        </div>
+      {% else %}
+        <p>The history is empty - none of the tests have been completed yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+</body>
+</html>

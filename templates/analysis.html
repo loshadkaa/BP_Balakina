@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mediscan - Image Analysis | {{ patient.name }} {{ patient.surname }}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f9ff;
+            color: #333;
+        }
+
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+            position: fixed;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            padding-top: 20px;
+        }
+
+        .logo {
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .menu-item {
+            color: white;
+            padding: 15px 25px;
+            margin: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .menu-item:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+
+        .menu-item.active {
+            background-color: rgba(255, 255, 255, 0.3);
+            font-weight: bold;
+        }
+
+        .menu-item i {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+
+        .menu-link {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .menu-link:hover {
+            color: white;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 30px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .page-title {
+            font-size: 28px;
+            color: #1e3a8a;
+            font-weight: 600;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #3b82f6;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .analysis-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .patient-info {
+            margin-bottom: 30px;
+        }
+
+        .patient-info table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .patient-info th {
+            text-align: left;
+            padding: 10px 15px;
+            width: 200px;
+            color: #1e3a8a;
+        }
+
+        .patient-info td {
+            padding: 10px 15px;
+        }
+
+        .image-container {
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .scan-image {
+            max-width: 100%;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .options-form {
+            background-color: #f8fafc;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .options-form label {
+            margin-right: 30px;
+            font-weight: 500;
+            color: #334155;
+            cursor: pointer;
+        }
+
+        .options-form input[type="checkbox"] {
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .btn-primary {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #2563eb;
+        }
+
+        .btn-secondary {
+            background-color: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background-color: #d0d0d0;
+        }
+
+        .btn-success {
+            background-color: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #0d9f6e;
+        }
+
+        .btn-warning {
+            background-color: #f59e0b;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background-color: #d97706;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background-color: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        th {
+            background-color: #f8fafc;
+            color: #1e3a8a;
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .alert-success {
+            background-color: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .action-buttons form {
+            flex: 1;
+        }
+
+        .logout-btn {
+            background-color: #ef4444;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            margin-left: 20px;
+        }
+
+        .logout-btn:hover {
+            background-color: #dc2626;
+        }
+
+        .file-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #1e3a8a;
+        }
+
+        .file-date {
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .file-model {
+            margin-top: 8px;
+            font-size: 14px;
+        }
+
+        .model-label {
+            color: #64748b;
+            margin-right: 5px;
+        }
+
+        .model-name {
+            font-weight: 500;
+            color: #1e40af;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">MEDISCAN</div>
+        <div class="menu-item">
+            <i class="fas fa-home"></i>
+            <a href="{{ url_for('doctor_dashboard') }}" class="menu-link">Dashboard</a>
+        </div>
+        <div class="menu-item active">
+            <i class="fas fa-user-injured"></i>
+            <a href="{{ url_for('patients_list') }}" class="menu-link">Patients</a>
+        </div>
+        <div class="menu-item">
+            <i class="fas fa-graduation-cap"></i>
+            <a href="{{ url_for('students_list') }}" class="menu-link">Students</a>
+        </div>
+        <div class="menu-item">
+            <i class="fas fa-upload"></i>
+            <a href="{{ url_for('upload_model') }}" class="menu-link">Upload model</a>
+        </div>
+        <div class="menu-item">
+            <i class="fas fa-cog"></i>
+            <a href="{{ url_for('settings') }}" class="menu-link">Settings</a>
+        </div>
+    </div>
+
+    <div class="main-content">
+    <div class="header">
+            <div class="page-title">Image analysis for {{ patient.name }} {{ patient.surname }}</div>
+            <div class="user-profile">
+                <div class="user-avatar">
+                    {{ session['user_name'].split()[0][0] }}{{ session['user_name'].split()[1][0] }}
+                </div>
+                <div>Dr. {{ session['user_name'] }}</div>
+                <a href="{{ url_for('logout') }}" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> Log out
+                </a>
+            </div>
+        </div>
+
+        <div class="analysis-card">
+            <div class="patient-info">
+                <table>
+                    <tr>
+                        <th>Patient</th>
+                        <td>{{ patient.name }} {{ patient.surname }}</td>
+                    </tr>
+                    <tr>
+                        <th>Date of birth</th>
+                        <td>{{ patient.birth_date }}</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="file-info">
+                <div class="file-name">{{ image.filename }}</div>
+                <div class="file-date">{{ image.date }}</div>
+            </div>
+
+            <form id="options-form" class="options-form">
+                <label>
+                    <input type="checkbox" id="usg"> USG
+                </label>
+                <label>
+                    <input type="checkbox" id="aline"> A-line
+                </label>
+                <label>
+                    <input type="checkbox" id="pleural"> Pleural line
+                </label>
+                <button type="button" class="btn btn-primary" onclick="updateImage()" style="float: right;">
+                    <i class="fas fa-sync-alt"></i> Show
+                </button>
+                <div style="clear: both;"></div>
+            </form>
+
+            <div class="image-container">
+                <img id="scan-image" src="{{ image_path }}" alt="Analyzovaný snímok" class="scan-image">
+            </div>
+
+            {% if detections %}
+            <h3>Detected anomalies:</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Level of certainty</th>
+                        <th>Coordinates</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for detection in detections %}
+                    <tr>
+                        <td>{{ detection['name'] }}</td>
+                        <td>{{ "%.1f"|format(detection['confidence'] * 100) }}%</td>
+                        <td>
+                            ({{ "%.0f"|format(detection['xmin']) }}, {{ "%.0f"|format(detection['ymin']) }}) -
+                            ({{ "%.0f"|format(detection['xmax']) }}, {{ "%.0f"|format(detection['ymax']) }})
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="alert alert-success">
+                <i class="fas fa-check-circle"></i> No anomalies were detected.
+            </div>
+            {% endif %}
+
+            <div class="file-info">
+                <span class="model-label">Model used:</span>
+                <span class="model-name">
+                    {% if selected_model %}
+                        {{ selected_model }}
+                    {% else %}
+                        Default model
+                    {% endif %}
+                </span>
+            </div>
+
+                       <div class="action-buttons">
+                <form method="POST" class="flex-1">
+                    <button type="submit" name="action" value="confirm" class="btn btn-success w-full">
+                        <i class="fas fa-check-circle"></i> Confirm results
+                    </button>
+                </form>
+                <form method="POST" class="flex-1">
+                    <input type="hidden" name="selected_model" value="{{ selected_model }}">
+                    <button type="submit" name="action" value="retry" class="btn btn-warning w-full">
+                        <i class="fas fa-redo"></i> Repeat analysis
+                    </button>
+                </form>
+                <a href="{{ url_for('patient_detail', patient_id=patient.id) }}" class="btn btn-secondary flex-1 text-center">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+    function updateImage() {
+        const usg = document.getElementById('usg').checked;
+        const aline = document.getElementById('aline').checked;
+        const pleural = document.getElementById('pleural').checked;
+
+        const image = document.getElementById('scan-image');
+        const baseUrl = "{{ image_path }}".split('?')[0];
+
+        const params = [];
+        if (usg) params.push('usg=1');
+        if (aline) params.push('aline=1');
+        if (pleural) params.push('pleural=1');
+
+        image.src = baseUrl + (params.length ? '?' + params.join('&') : '');
+    }
+    </script>
+</body>
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mediscan - Doctor Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f9ff;
+            color: #333;
+        }
+
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+            position: fixed;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            padding-top: 20px;
+        }
+
+        .logo {
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .menu-item {
+            color: white;
+            padding: 15px 25px;
+            margin: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .menu-item:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+
+        .menu-item.active {
+            background-color: rgba(255, 255, 255, 0.3);
+            font-weight: bold;
+        }
+
+        .menu-item i {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+
+        .menu-link {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .menu-link:hover {
+            color: white;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 30px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .page-title {
+            font-size: 28px;
+            color: #1e3a8a;
+            font-weight: 600;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #3b82f6;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .dashboard-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-title {
+            font-size: 18px;
+            color: #1e3a8a;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .card-content {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .logout-btn {
+            background-color: #ef4444;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            margin-left: 10px;
+            font-size: 14px;
+        }
+
+        .logout-btn:hover {
+            background-color: #dc2626;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+   <div class="sidebar">
+    <div class="logo">MEDISCAN</div>
+    <div class="menu-item {% if request.path == url_for('doctor_dashboard') %}active{% endif %}">
+        <i class="fas fa-home"></i>
+        <a href="{{ url_for('doctor_dashboard') }}" class="menu-link">Dashboard</a>
+    </div>
+    <div class="menu-item {% if request.path == url_for('patients_list') %}active{% endif %}">
+        <i class="fas fa-user-injured"></i>
+        <a href="{{ url_for('patients_list') }}" class="menu-link">Patients</a>
+    </div>
+    <div class="menu-item {% if request.path == url_for('students_list') %}active{% endif %}">
+        <i class="fas fa-graduation-cap"></i>
+        <a href="{{ url_for('students_list') }}" class="menu-link">Students</a>
+    </div>
+    <div class="menu-item {% if request.path == url_for('upload_model') %}active{% endif %}">
+        <i class="fas fa-upload"></i>
+        <a href="{{ url_for('upload_model') }}" class="menu-link">Upload model</a>
+    </div>
+    <div class="menu-item {% if request.path == url_for('settings') %}active{% endif %}">
+        <i class="fas fa-cog"></i>
+        <a href="{{ url_for('settings') }}" class="menu-link">Settings</a>
+    </div>
+</div>
+
+    <div class="main-content">
+        <div class="header">
+            <div class="page-title">Doctor Dashboard</div>
+            <div class="user-profile">
+                    <div class="user-avatar">
+                        {{ session['user_name'].split()[0][0] }}{{ session['user_name'].split()[1][0] }}
+                    </div>
+                    <div>Dr. {{ session['user_name'] }}</div>
+                    <a href="{{ url_for('logout') }}" class="logout-btn" style="margin-left: 20px;">
+                        <i class="fas fa-sign-out-alt"></i> Log out
+                    </a>
+            </div>
+        </div>
+
+        <div class="dashboard-cards">
+            <div class="card">
+                <div class="card-title">Today's Appointments</div>
+                <div class="card-content">
+                    You have 5 appointments scheduled for today. Next appointment at 10:30 AM with patient Anna K.
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Recent Scans</div>
+                <div class="card-content">
+                    3 new scans uploaded in the last 24 hours. 1 requires urgent attention.
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">Students Activity</div>
+                <div class="card-content">
+                    2 students completed assignments this week. Review their progress in the Students section.
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

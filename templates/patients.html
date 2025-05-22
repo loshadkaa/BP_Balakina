@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mediscan - Patient list</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f9ff;
+            color: #333;
+        }
+
+        .sidebar {
+            width: 250px;
+            height: 100vh;
+            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+            position: fixed;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            padding-top: 20px;
+        }
+
+        .logo {
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .menu-item {
+            color: white;
+            padding: 15px 25px;
+            margin: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .menu-item:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: translateX(5px);
+        }
+
+        .menu-item.active {
+            background-color: rgba(255, 255, 255, 0.3);
+            font-weight: bold;
+        }
+
+        .menu-item i {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+
+        .menu-link {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+
+        .menu-link:hover {
+            color: white;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 30px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .page-title {
+            font-size: 28px;
+            color: #1e3a8a;
+            font-weight: 600;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #3b82f6;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+
+        .patients-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .patients-table th {
+            background-color: #1e3a8a;
+            color: white;
+            padding: 15px;
+            text-align: left;
+        }
+
+        .patients-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .patients-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .patients-table tr:hover {
+            background-color: #f0f7ff;
+        }
+
+        .action-btn {
+            padding: 8px 15px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .view-btn {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .view-btn:hover {
+            background-color: #2563eb;
+        }
+
+        .logout-btn {
+            background-color: #ef4444;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .logout-btn:hover {
+            background-color: #dc2626;
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="sidebar">
+        <div class="logo">MEDISCAN</div>
+        <div class="menu-item {% if request.path == url_for('doctor_dashboard') %}active{% endif %}">
+            <i class="fas fa-home"></i>
+            <a href="{{ url_for('doctor_dashboard') }}" class="menu-link">Dashboard</a>
+        </div>
+        <div class="menu-item {% if request.path == url_for('patients_list') %}active{% endif %}">
+            <i class="fas fa-user-injured"></i>
+            <a href="{{ url_for('patients_list') }}" class="menu-link">Patients</a>
+        </div>
+        <div class="menu-item {% if request.path == url_for('students_list') %}active{% endif %}">
+            <i class="fas fa-graduation-cap"></i>
+            <a href="{{ url_for('students_list') }}" class="menu-link">Students</a>
+        </div>
+        <div class="menu-item {% if request.path == url_for('upload_model') %}active{% endif %}">
+            <i class="fas fa-upload"></i>
+            <a href="{{ url_for('upload_model') }}" class="menu-link">Upload model</a>
+        </div>
+        <div class="menu-item {% if request.path == url_for('settings') %}active{% endif %}">
+            <i class="fas fa-cog"></i>
+            <a href="{{ url_for('settings') }}" class="menu-link">Settings</a>
+        </div>
+    </div>
+    
+    <div class="main-content">
+        <div class="header">
+            <div class="page-title">Patient list</div>
+            <div class="user-profile">
+                <div class="user-avatar">
+                    {{ session['user_name'].split()[0][0] }}{{ session['user_name'].split()[1][0] }}
+                </div>
+                <div>Dr. {{ session['user_name'] }}</div>
+                <a href="{{ url_for('logout') }}" class="logout-btn" style="margin-left: 20px;">
+                    <i class="fas fa-sign-out-alt"></i> Log out
+                </a>
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <table class="patients-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Surname</th>
+                        <th>Date of birth</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for patient in patients %}
+                    <tr>
+                        <td>{{ patient.name }}</td>
+                        <td>{{ patient.surname }}</td>
+                        <td>{{ patient.birth_date }}</td>
+                        <td>
+                            <a href="{{ url_for('patient_detail', patient_id=patient.id) }}" class="action-btn view-btn">
+                                <i class="fas fa-eye"></i> Show
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

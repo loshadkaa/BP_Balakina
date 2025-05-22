@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+    <div class="form-section date-section">
+        <div>
+            <h3>Start date</h3>
+            <input type="datetime-local" name="start_date" class="form-date" required
+                   min="{{ datetime.now().strftime('%Y-%m-%dT%H:%M') }}">
+        </div>
+        <div>
+            <h3>End date</h3>
+            <input type="datetime-local" name="end_date" class="form-date" required
+                   min="{{ datetime.now().strftime('%Y-%m-%dT%H:%M') }}">
+        </div>
+    </div>
+
+</body>
+</html>
