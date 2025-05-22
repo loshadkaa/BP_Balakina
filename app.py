@@ -233,7 +233,6 @@ def init_db():
 
 
 def hash_password(password):
-    """Hash a password for storing."""
     return hashlib.sha256(password.encode()).hexdigest()
 
 def get_db():
