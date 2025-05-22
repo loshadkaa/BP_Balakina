@@ -638,6 +638,9 @@ def start_test(assignment_id):
 
 @app.route('/submit-test/<int:assignment_id>', methods=['POST'])
 def submit_test(assignment_id):
+    try:
+        print(f"[DEBUG] SUBMIT: assignment_id={assignment_id}, user={session.get('username')}")
+
     if 'username' not in session or session.get('user_role') != 'student':
         return jsonify({"success": False, "message": "Unauthorized"}), 403
 
@@ -652,6 +655,7 @@ def submit_test(assignment_id):
          WHERE ast.assignment_id = ? AND u.username = ?
     ''', (assignment_id, session['username']))
     if not cursor.fetchone():
+        print("[ERROR] Test not assigned to student.")
         return jsonify({"success": False, "message": "Test not assigned to you"}), 404
 
     # 2. Проверка, что студент ещё не сдавал
@@ -661,11 +665,17 @@ def submit_test(assignment_id):
            AND student_id = (SELECT id FROM users WHERE username = ?)
     ''', (assignment_id, session['username']))
     if cursor.fetchone():
+        print("[ERROR] Test already submitted.")
         return jsonify({"success": False, "message": "You have already completed this test"}), 400
 
     # 3. Данные из фронта
     data = request.get_json()
+    if not data:
+        print("[ERROR] No data received from frontend.")
+        return jsonify({"success": False, "message": "No data"}), 400
+
     rectangles_data = data.get("rectangles", {})
+    print(f"[DEBUG] rectangles_data keys: {list(rectangles_data.keys())}")
 
     # 4. Список изображений задания
     cursor.execute('SELECT id, filename FROM assignment_images WHERE assignment_id = ?', (assignment_id,))
