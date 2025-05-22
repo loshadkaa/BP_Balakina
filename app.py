@@ -1471,7 +1471,6 @@ def logout():
 
 if __name__ == '__main__':
     os.makedirs(os.path.dirname(DATABASE) or os.path.curdir, exist_ok=True)
+    init_db()  # сначала инициализация базы данных
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
-    init_db()
-
