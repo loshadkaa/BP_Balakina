@@ -10,6 +10,7 @@ from datetime import datetime
 import sqlite3
 import hashlib
 from flask import jsonify
+from pathlib import Path
 
 
 app = Flask(__name__)
@@ -24,6 +25,7 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MODEL_FOLDER'] = MODEL_FOLDER
 DATABASE = 'database.db'
+loaded_models = {}
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(MODEL_FOLDER, exist_ok=True)
@@ -243,26 +245,48 @@ def get_db():
         db.row_factory = sqlite3.Row
     return db
 
+
+def preload_all_models():
+    model_dir = Path(app.config['MODEL_FOLDER'])
+    for model_file in model_dir.glob("*.pt"):
+        try:
+            print(f"Preloading model: {model_file.name}")
+            model = torch.hub.load('ultralytics/yolov5', 'custom', path=str(model_file))
+            model.eval()
+            model.conf = 0.25
+            model.iou = 0.45
+            loaded_models[model_file.name] = model
+        except Exception as e:
+            print(f"❌ Failed to load {model_file.name}: {e}")
+
+
 def process_image(image_path, model_name=None):
     try:
+        # === LOAD MODEL ===
         if model_name:
-            model_path = os.path.join('models', model_name)
-            if not os.path.exists(model_path):
-                return {"success": False, "error": f"Model file {model_name} not found"}
-
-            try:
+            # Use cached model if available
+            if model_name in loaded_models:
+                model = loaded_models[model_name]
+            else:
+                model_path = os.path.join(app.config['MODEL_FOLDER'], model_name)
+                if not os.path.exists(model_path):
+                    return {"success": False, "error": f"Model file {model_name} not found"}
                 model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path)
-                model.conf = 0.25  # сниженный порог уверенности
-                model.iou = 0.45   # стандартный IoU
-            except Exception as e:
-                return {"success": False, "error": f"Error loading model: {str(e)}"}
+                model.eval()
+                model.conf = 0.25  # lower confidence threshold
+                model.iou = 0.45   # IoU threshold
+                loaded_models[model_name] = model
         else:
-            if not hasattr(process_image, 'default_model'):
-                process_image.default_model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
-                process_image.default_model.conf = 0.25
-                process_image.default_model.iou = 0.45
-            model = process_image.default_model
+            # Use default model from cache or load once
+            if 'default' not in loaded_models:
+                model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+                model.eval()
+                model.conf = 0.25
+                model.iou = 0.45
+                loaded_models['default'] = model
+            model = loaded_models['default']
 
+        # === LOAD IMAGE ===
         if not os.path.exists(image_path):
             return {"success": False, "error": "Image file not found"}
 
@@ -270,12 +294,34 @@ def process_image(image_path, model_name=None):
         if img.mode != 'RGB':
             img = img.convert('RGB')
 
+        # === INFERENCE ===
         results = model(img)
         detections = json.loads(results.pandas().xyxy[0].to_json(orient="records"))
+
+        original_name = os.path.basename(image_path)
+        output_filename = f"analyzed_{model_name or 'default'}_{original_name}"
+        output_path = os.path.join('static', output_filename)
+
+        plt.figure(figsize=(12, 8))
+        plt.imshow(np.array(img))
+        plt.axis('off')
+
+        for detection in detections:
+            xmin, ymin, xmax, ymax = detection['xmin'], detection['ymin'], detection['xmax'], detection['ymax']
+            rect = plt.Rectangle((xmin, ymin), xmax - xmin, ymax - ymin,
+                                 fill=False, color='red', linewidth=2)
+            plt.gca().add_patch(rect)
+            plt.text(xmin, ymin, f"{detection['name']} {detection['confidence']:.2f}",
+                     color='white', backgroundcolor='red', fontsize=8)
+
+        plt.savefig(output_path, bbox_inches='tight', dpi=150)
+        plt.close()
 
         return {
             "success": True,
             "detections": detections,
+            "output_image": output_filename,
+            "original_image": original_name,
             "model_used": model_name or "default"
         }
 
@@ -285,6 +331,7 @@ def process_image(image_path, model_name=None):
             "error": str(e),
             "model_used": model_name or "default"
         }
+
 
 
 @app.teardown_appcontext
@@ -1493,5 +1540,6 @@ if __name__ == '__main__':
     download_model()
     os.makedirs(os.path.dirname(DATABASE) or os.path.curdir, exist_ok=True)
     init_db()
+    preload_all_models()
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
