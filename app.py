@@ -73,11 +73,14 @@ def datetimeformat(value, format='%Y-%m-%d %H:%M:%S'):
     return value.strftime(format)
 
 app.jinja_env.filters['datetimeformat'] = datetimeformat
+
+
 def init_db():
     with app.app_context():
         db = sqlite3.connect(DATABASE)
         cursor = db.cursor()
 
+        # Create tables if not exist
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -173,60 +176,58 @@ def init_db():
                 answers TEXT,
                 score INTEGER,
                 submitted_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                combined_images TEXT,
+                status TEXT,
                 FOREIGN KEY(assignment_id) REFERENCES assignments(id),
                 FOREIGN KEY(student_id) REFERENCES users(id),
                 UNIQUE(assignment_id, student_id)
             )
         ''')
 
-        test_doctors = [
-            ('Ján', 'Doktor', 'jan.doktor', hash_password('password123'), 'doctor', 'jan.doktor@mediscan.sk',
-             'Radiology', 'Diagnostic Imaging'),
-            ('Eva', 'Lekárka', 'eva.lekarka', hash_password('password456'), 'doctor', 'eva.lekarka@mediscan.sk',
-             'Neurology', 'Neurology Department')
-        ]
+        # ✅ Add test data only if database is empty
+        cursor.execute("SELECT COUNT(*) FROM users")
+        user_count = cursor.fetchone()[0]
 
-        test_students = [
-            (
-            'Peter', 'Študent', 'peter.student', hash_password('student123'), 'student', 'peter.student@university.sk'),
-            ('Mária', 'Študentka', 'maria.studentka', hash_password('student456'), 'student',
-             'maria.studentka@university.sk')
-        ]
+        if user_count == 0:
+            print("⛳ Adding default test data...")
+            test_doctors = [
+                ('Ján', 'Doktor', 'jan.doktor', hash_password('password123'), 'doctor', 'jan.doktor@mediscan.sk',
+                 'Radiology', 'Diagnostic Imaging'),
+                ('Eva', 'Lekárka', 'eva.lekarka', hash_password('password456'), 'doctor', 'eva.lekarka@mediscan.sk',
+                 'Neurology', 'Neurology Department')
+            ]
 
-        test_patients = [
-            ('Ján', 'Kováč', '1985-05-15', 'History of hypertension', 1),
-            ('Anna', 'Vargová', '1978-11-22', 'Diabetes type 2', 1),
-            ('Peter', 'Novák', '1992-03-08', 'No significant history', 2)
-        ]
+            test_students = [
+                ('Peter', 'Študent', 'peter.student', hash_password('student123'), 'student', 'peter.student@university.sk'),
+                ('Mária', 'Študentka', 'maria.studentka', hash_password('student456'), 'student', 'maria.studentka@university.sk')
+            ]
 
-        for name, surname, username, password, role, email, *rest in test_doctors:
-            try:
-                if role == 'doctor':
-                    specialization, department = rest
-                    cursor.execute(
-                        "INSERT OR IGNORE INTO users (name, surname, username, password, user_role, email, specialization, department) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                        (name, surname, username, password, role, email, specialization, department)
-                    )
-            except sqlite3.IntegrityError:
-                pass
+            test_patients = [
+                ('Ján', 'Kováč', '1985-05-15', 'History of hypertension', 1),
+                ('Anna', 'Vargová', '1978-11-22', 'Diabetes type 2', 1),
+                ('Peter', 'Novák', '1992-03-08', 'No significant history', 2)
+            ]
 
-        for name, surname, username, password, role, email in test_students:
-            try:
+            # Insert doctors
+            for name, surname, username, password, role, email, specialization, department in test_doctors:
+                cursor.execute(
+                    "INSERT OR IGNORE INTO users (name, surname, username, password, user_role, email, specialization, department) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    (name, surname, username, password, role, email, specialization, department)
+                )
+
+            # Insert students
+            for name, surname, username, password, role, email in test_students:
                 cursor.execute(
                     "INSERT OR IGNORE INTO users (name, surname, username, password, user_role, email) VALUES (?, ?, ?, ?, ?, ?)",
                     (name, surname, username, password, role, email)
                 )
-            except sqlite3.IntegrityError:
-                pass
 
-        for name, surname, birth_date, medical_history, created_by in test_patients:
-            try:
+            # Insert patients
+            for name, surname, birth_date, history, created_by in test_patients:
                 cursor.execute(
                     "INSERT OR IGNORE INTO patients (name, surname, birth_date, medical_history, created_by) VALUES (?, ?, ?, ?, ?)",
-                    (name, surname, birth_date, medical_history, created_by)
+                    (name, surname, birth_date, history, created_by)
                 )
-            except sqlite3.IntegrityError:
-                pass
 
         db.commit()
         db.close()
@@ -640,134 +641,127 @@ def submit_test(assignment_id):
     try:
         print(f"[DEBUG] SUBMIT: assignment_id={assignment_id}, user={session.get('username')}")
 
-    if 'username' not in session or session.get('user_role') != 'student':
-        return jsonify({"success": False, "message": "Unauthorized"}), 403
+        if 'username' not in session or session.get('user_role') != 'student':
+            return jsonify({"success": False, "message": "Unauthorized"}), 403
 
-    db = get_db()
-    cursor = db.cursor()
+        db = get_db()
+        cursor = db.cursor()
 
-    # 1. Проверка, что тест назначен студенту
-    cursor.execute('''
-        SELECT 1
-          FROM assignment_students ast
-          JOIN users u ON ast.student_id = u.id
-         WHERE ast.assignment_id = ? AND u.username = ?
-    ''', (assignment_id, session['username']))
-    if not cursor.fetchone():
-        print("[ERROR] Test not assigned to student.")
-        return jsonify({"success": False, "message": "Test not assigned to you"}), 404
+        # 1. Check if test is assigned to the student
+        cursor.execute('''
+            SELECT 1
+            FROM assignment_students ast
+            JOIN users u ON ast.student_id = u.id
+            WHERE ast.assignment_id = ? AND u.username = ?
+        ''', (assignment_id, session['username']))
+        if not cursor.fetchone():
+            print("[ERROR] Test not assigned to student.")
+            return jsonify({"success": False, "message": "Test not assigned to you"}), 404
 
-    # 2. Проверка, что студент ещё не сдавал
-    cursor.execute('''
-        SELECT 1 FROM test_results
-         WHERE assignment_id = ?
-           AND student_id = (SELECT id FROM users WHERE username = ?)
-    ''', (assignment_id, session['username']))
-    if cursor.fetchone():
-        print("[ERROR] Test already submitted.")
-        return jsonify({"success": False, "message": "You have already completed this test"}), 400
+        # 2. Check if student already submitted
+        cursor.execute('''
+            SELECT 1 FROM test_results
+            WHERE assignment_id = ?
+              AND student_id = (SELECT id FROM users WHERE username = ?)
+        ''', (assignment_id, session['username']))
+        if cursor.fetchone():
+            print("[ERROR] Test already submitted.")
+            return jsonify({"success": False, "message": "You have already completed this test"}), 400
 
-    # 3. Данные из фронта
-    data = request.get_json()
-    if not data:
-        print("[ERROR] No data received from frontend.")
-        return jsonify({"success": False, "message": "No data"}), 400
+        # 3. Get JSON data from frontend
+        data = request.get_json()
+        if not data:
+            print("[ERROR] No data received from frontend.")
+            return jsonify({"success": False, "message": "No data"}), 400
 
-    rectangles_data = data.get("rectangles", {})
-    print(f"[DEBUG] rectangles_data keys: {list(rectangles_data.keys())}")
+        rectangles_data = data.get("rectangles", {})
+        print(f"[DEBUG] rectangles_data keys: {list(rectangles_data.keys())}")
 
-    # 4. Список изображений задания
-    cursor.execute('SELECT id, filename FROM assignment_images WHERE assignment_id = ?', (assignment_id,))
-    images = cursor.fetchall()
+        # 4. Get assignment images
+        cursor.execute('SELECT id, filename FROM assignment_images WHERE assignment_id = ?', (assignment_id,))
+        images = cursor.fetchall()
 
-    # Подготовка словарей
-    student_rectangles = {}
-    model_rectangles   = {}
-    intersections      = {}
-    scores             = []
+        student_rectangles = {}
+        model_rectangles = {}
+        intersections = {}
+        scores = []
 
-    # Получаем id студента для названий файлов
-    cursor.execute("SELECT id FROM users WHERE username = ?", (session['username'],))
-    student_id = cursor.fetchone()['id']
+        # Get student ID
+        cursor.execute("SELECT id FROM users WHERE username = ?", (session['username'],))
+        student_id = cursor.fetchone()['id']
 
-    # 5. Обрабатываем каждое изображение
-    for image in images:
-        img_id = image['id']
-        fname  = image['filename']
-        key    = f'rectangles_{img_id}'
+        # 5. Process each image
+        for image in images:
+            img_id = image['id']
+            fname = image['filename']
+            key = f'rectangles_{img_id}'
 
-        # a) прямоугольники студента
-        student_rects = rectangles_data.get(key, [])
-        student_rectangles[str(img_id)] = student_rects
+            student_rects = rectangles_data.get(key, [])
+            student_rectangles[str(img_id)] = student_rects
 
-        # b) прямоугольники модели
-        model_rects = get_model_detections(fname, assignment_id)
-        model_rectangles[str(img_id)] = model_rects
+            model_rects = get_model_detections(fname, assignment_id)
+            model_rectangles[str(img_id)] = model_rects
 
-        # c) пересечения
-        img_inter = calculate_intersections(student_rects, model_rects)
-        intersections[str(img_id)] = img_inter
+            img_inter = calculate_intersections(student_rects, model_rects)
+            intersections[str(img_id)] = img_inter
 
-        # d) оценка по изображению
-        img_score = calculate_image_score(student_rects, model_rects, img_inter)
-        scores.append(img_score)
+            img_score = calculate_image_score(student_rects, model_rects, img_inter)
+            scores.append(img_score)
 
-    # 6. Итоговая оценка
-    overall_score = int(sum(scores) / len(scores)) if scores else 0
+        overall_score = int(sum(scores) / len(scores)) if scores else 0
 
-    # 7. Генерация и сохранение combined-изображений
-    combined_imgs = {}
-    for image in images:
-        img_id = image['id']
-        orig   = image['filename']
-        orig_path = os.path.join(app.config['UPLOAD_FOLDER'], orig)
+        # 6. Generate combined images
+        combined_imgs = {}
+        for image in images:
+            img_id = image['id']
+            orig = image['filename']
+            orig_path = os.path.join(app.config['UPLOAD_FOLDER'], orig)
 
-        # Открываем исходник
-        im = Image.open(orig_path).convert('RGB')
-        draw = ImageDraw.Draw(im)
+            im = Image.open(orig_path).convert('RGB')
+            draw = ImageDraw.Draw(im)
 
-        # Вспомогательная функция
-        def drect(r, color):
-            x,y,w,h = r['x'], r['y'], r['width'], r['height']
-            draw.rectangle([x, y, x+w, y+h], outline=color, width=3)
+            def drect(r, color):
+                x, y, w, h = r['x'], r['y'], r['width'], r['height']
+                draw.rectangle([x, y, x + w, y + h], outline=color, width=3)
 
-        # Рисуем: модель (синие), пересечения (зеленые), студент (красные)
-        for r in model_rectangles[str(img_id)]:   drect(r, 'blue')
-        for r in intersections[str(img_id)]:       drect(r, 'limegreen')
-        for r in student_rectangles[str(img_id)]:  drect(r, 'red')
+            for r in model_rectangles[str(img_id)]: drect(r, 'blue')
+            for r in intersections[str(img_id)]: drect(r, 'limegreen')
+            for r in student_rectangles[str(img_id)]: drect(r, 'red')
 
-        # Сохраняем итоговую картинку
-        combined_name = f"combined_{assignment_id}_{student_id}_{img_id}.png"
-        combined_path = os.path.join(app.config['UPLOAD_FOLDER'], combined_name)
-        im.save(combined_path)
-        combined_imgs[str(img_id)] = combined_name
+            combined_name = f"combined_{assignment_id}_{student_id}_{img_id}.png"
+            combined_path = os.path.join(app.config['UPLOAD_FOLDER'], combined_name)
+            im.save(combined_path)
+            combined_imgs[str(img_id)] = combined_name
 
-    # 8. Запись в БД со столбцом combined_images (JSON)
-    cursor.execute('''
-        INSERT INTO test_results
-          (assignment_id, student_id, answers, score, combined_images)
-        VALUES (?, (SELECT id FROM users WHERE username = ?), ?, ?, ?)
-    ''', (
-        assignment_id,
-        session['username'],
-        json.dumps({
-            'student_rectangles': student_rectangles,
-            'model_rectangles':   model_rectangles,
-            'intersections':      intersections
-        }),
-        overall_score,
-        json.dumps(combined_imgs)
-    ))
-    result_id = cursor.lastrowid
-    db.commit()
+        # 7. Save result in DB
+        cursor.execute('''
+            INSERT INTO test_results
+              (assignment_id, student_id, answers, score, combined_images)
+            VALUES (?, (SELECT id FROM users WHERE username = ?), ?, ?, ?)
+        ''', (
+            assignment_id,
+            session['username'],
+            json.dumps({
+                'student_rectangles': student_rectangles,
+                'model_rectangles': model_rectangles,
+                'intersections': intersections
+            }),
+            overall_score,
+            json.dumps(combined_imgs)
+        ))
+        result_id = cursor.lastrowid
+        db.commit()
 
-    # 9. Ответ фронту
-    return jsonify({
-        "success": True,
-        "message": "Test submitted successfully",
-        "score": overall_score,
-        "result_id": result_id
-    })
+        return jsonify({
+            "success": True,
+            "message": "Test submitted successfully",
+            "score": overall_score,
+            "result_id": result_id
+        })
+
+    except Exception as e:
+        return jsonify({"success": False, "message": f"Internal error: {str(e)}"}), 500
+
 
 @app.route('/test-result/<int:result_id>')
 def test_result_view(result_id):
