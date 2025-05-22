@@ -15,13 +15,11 @@ from flask import jsonify
 app = Flask(__name__)
 app.secret_key = os.urandom(24).hex()
 
-MODEL_URL = "https://drive.google.com/uc?export=download&id=1RmUTs5eGHJh-1_EbpGokomlvi45DgmRh"
-MODEL_PATH = os.path.join(MODEL_FOLDER, 'best.pt')
-
-
 # Configuration
 UPLOAD_FOLDER = 'static/uploads'
 MODEL_FOLDER = 'models'
+MODEL_URL = "https://drive.google.com/uc?export=download&id=1RmUTs5eGHJh-1_EbpGokomlvi45DgmRh"
+MODEL_PATH = os.path.join(MODEL_FOLDER, 'best.pt')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MODEL_FOLDER'] = MODEL_FOLDER
