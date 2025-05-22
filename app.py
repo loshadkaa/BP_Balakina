@@ -44,8 +44,8 @@ def load_model(path):
         model = None
 
 # Load the default model at startup
-if os.path.exists(model_path):
-    load_model(model_path)
+# if os.path.exists(model_path):
+#     load_model(model_path)
 
 def datetimeformat(value, format='%Y-%m-%d %H:%M:%S'):
     if isinstance(value, str):
@@ -1472,6 +1472,6 @@ def logout():
 if __name__ == '__main__':
     os.makedirs(os.path.dirname(DATABASE) or os.path.curdir, exist_ok=True)
     port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
     init_db()
 
-    app.run(host='0.0.0.0', port=port)
