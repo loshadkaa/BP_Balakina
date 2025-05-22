@@ -192,9 +192,10 @@ function submitAllRectangles() {
     return alert('Please draw at least one rectangle.');
   }
   fetch(`/submit-test/{{ assignment.id }}`, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ rectangles: toSend })
+      method:'POST',
+      credentials: 'include',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ rectangles: toSend })
   })
   .then(r=>r.json())
   .then(d=>{

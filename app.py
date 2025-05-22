@@ -642,6 +642,7 @@ def submit_test(assignment_id):
         print(f"[DEBUG] SUBMIT: assignment_id={assignment_id}, user={session.get('username')}")
 
         if 'username' not in session or session.get('user_role') != 'student':
+            print(f"[DEBUG] SUBMIT: assignment_id={assignment_id}, user={session.get('username')}")
             return jsonify({"success": False, "message": "Unauthorized"}), 403
 
         db = get_db()
@@ -759,7 +760,9 @@ def submit_test(assignment_id):
             "result_id": result_id
         })
 
+
     except Exception as e:
+        app.logger.error(f"Error in submit_test: {e}")
         return jsonify({"success": False, "message": f"Internal error: {str(e)}"}), 500
 
 
