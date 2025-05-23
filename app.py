@@ -1423,7 +1423,6 @@ def logout():
 
 
 if __name__ == '__main__':
-    download_model()
     os.makedirs(os.path.dirname(DATABASE) or os.path.curdir, exist_ok=True)
     init_db()
     preload_all_models()
