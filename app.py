@@ -10,8 +10,7 @@ import hashlib
 from flask import jsonify
 from pathlib import Path
 import requests
-import torch.quantization
-
+from ultralytics import YOLO
 
 
 app = Flask(__name__)
@@ -229,13 +228,12 @@ def preload_all_models():
 
     print(f"📥 Preloading and quantizing model: {model_file.name}")
     # 1) Загрузка
-    model = torch.hub.load('ultralytics/yolov5', 'custom', path=str(model_file))
-    model.eval()
+    model = YOLO(str(model_file))
 
     # 2) Динамическое квантование
     from torch.quantization import quantize_dynamic
-    model = quantize_dynamic(
-        model,
+    model.model = quantize_dynamic(
+        model.model,
         {torch.nn.Conv2d, torch.nn.Linear},
         dtype=torch.qint8
     )
@@ -244,27 +242,31 @@ def preload_all_models():
     print(f"✅ Model loaded: {model_file.name}, size reduced")
 
 def process_image(image_path):
-    """Инференс и отрисовка боксов через PIL + quantized модель."""
     try:
-        model = loaded_models.get('default')
+        model: YOLO = loaded_models.get('default')
         if model is None:
             return {"success": False, "error": "Model not loaded"}
 
-        # Читаем и готовим картинку
         img = Image.open(image_path).convert('RGB')
         draw = ImageDraw.Draw(img)
 
-        # Инференс
-        results = model(img)
-        detections = results.pandas().xyxy[0].to_dict(orient="records")
+        # ultralytics inference
+        results = model(img, device='cpu')  # явно на CPU
+        # results[0].boxes — объекты BoxList с xmin, ymin, xmax, ymax, cls и conf
+        detections = []
+        for box in results[0].boxes:
+            xmin, ymin, xmax, ymax = box.xyxy[0].tolist()
+            name  = results[0].names[int(box.cls[0])]
+            conf  = float(box.conf[0])
+            detections.append({
+                'xmin': xmin, 'ymin': ymin, 'xmax': xmax, 'ymax': ymax,
+                'name': name, 'confidence': conf
+            })
 
-        # Рисуем боксы
-        for det in detections:
-            x0, y0, x1, y1 = det['xmin'], det['ymin'], det['xmax'], det['ymax']
-            draw.rectangle([x0, y0, x1, y1], outline="red", width=2)
-            draw.text((x0, y0), f"{det['name']} {det['confidence']:.2f}", fill="white")
+            # рисуем
+            draw.rectangle([xmin, ymin, xmax, ymax], outline="red", width=2)
+            draw.text((xmin, ymin), f"{name} {conf:.2f}", fill="white")
 
-        # Сохраняем результат
         original = os.path.basename(image_path)
         out_name = f"analyzed_default_{original}"
         out_path = os.path.join('static', out_name)
@@ -277,10 +279,8 @@ def process_image(image_path):
             "original_image": original,
             "model_used": "default"
         }
-
     except Exception as e:
         return {"success": False, "error": str(e)}
-
 
 @app.teardown_appcontext
 def close_connection(exception):
