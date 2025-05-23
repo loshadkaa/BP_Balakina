@@ -2,15 +2,16 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 import os
 from werkzeug.utils import secure_filename
 import torch
-import numpy as np
 from PIL import Image, ImageDraw
-import matplotlib.pyplot as plt
 import json
 from datetime import datetime
 import sqlite3
 import hashlib
 from flask import jsonify
 from pathlib import Path
+import requests
+import torch.quantization
+
 
 
 app = Flask(__name__)
@@ -36,32 +37,6 @@ model = None
 model_path = os.path.join(MODEL_FOLDER, 'best.pt')  # Default model
 app.jinja_env.globals.update(datetime=datetime)
 
-
-def download_model():
-    if not os.path.exists(MODEL_PATH):
-        print("📥 Скачиваем модель с Google Drive...")
-        response = requests.get(MODEL_URL)
-        if response.status_code == 200:
-            os.makedirs(os.path.dirname(MODEL_PATH), exist_ok=True)
-            with open(MODEL_PATH, 'wb') as f:
-                f.write(response.content)
-            print("✅ Модель успешно загружена!")
-        else:
-            print(f"❌ Не удалось загрузить модель. Код ответа: {response.status_code}")
-# def load_model(path):
-#     global model
-#     try:
-#         torch.hub._validate_not_a_forked_repo = lambda a, b, c: True
-#         model = torch.hub.load('ultralytics/yolov5', 'custom', path=path)
-#         model.eval()
-#         print(f"Model loaded from {path}")
-#     except Exception as e:
-#         print(f"Model loading error: {e}")
-#         model = None
-#
-# # Load the default model at startup
-# # if os.path.exists(model_path):
-# #     load_model(model_path)
 
 def datetimeformat(value, format='%Y-%m-%d %H:%M:%S'):
     if isinstance(value, str):
@@ -247,91 +222,64 @@ def get_db():
 
 
 def preload_all_models():
-    model_dir = Path(app.config['MODEL_FOLDER'])
-    for model_file in model_dir.glob("*.pt"):
-        try:
-            print(f"Preloading model: {model_file.name}")
-            model = torch.hub.load('ultralytics/yolov5', 'custom', path=str(model_file))
-            model.eval()
-            model.conf = 0.25
-            model.iou = 0.45
-            loaded_models[model_file.name] = model
-        except Exception as e:
-            print(f"❌ Failed to load {model_file.name}: {e}")
+    model_file = Path(app.config['MODEL_FOLDER']) / 'best.pt'
+    if not model_file.exists():
+        print(f"❌ Файл модели {model_file} не найден")
+        return
 
+    print(f"📥 Preloading and quantizing model: {model_file.name}")
+    # 1) Загрузка
+    model = torch.hub.load('ultralytics/yolov5', 'custom', path=str(model_file))
+    model.eval()
 
-def process_image(image_path, model_name=None):
+    # 2) Динамическое квантование
+    from torch.quantization import quantize_dynamic
+    model = quantize_dynamic(
+        model,
+        {torch.nn.Conv2d, torch.nn.Linear},
+        dtype=torch.qint8
+    )
+
+    loaded_models['default'] = model
+    print(f"✅ Model loaded: {model_file.name}, size reduced")
+
+def process_image(image_path):
+    """Инференс и отрисовка боксов через PIL + quantized модель."""
     try:
-        # === LOAD MODEL ===
-        if model_name:
-            # Use cached model if available
-            if model_name in loaded_models:
-                model = loaded_models[model_name]
-            else:
-                model_path = os.path.join(app.config['MODEL_FOLDER'], model_name)
-                if not os.path.exists(model_path):
-                    return {"success": False, "error": f"Model file {model_name} not found"}
-                model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path)
-                model.eval()
-                model.conf = 0.25  # lower confidence threshold
-                model.iou = 0.45   # IoU threshold
-                loaded_models[model_name] = model
-        else:
-            # Use default model from cache or load once
-            if 'default' not in loaded_models:
-                model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
-                model.eval()
-                model.conf = 0.25
-                model.iou = 0.45
-                loaded_models['default'] = model
-            model = loaded_models['default']
+        model = loaded_models.get('default')
+        if model is None:
+            return {"success": False, "error": "Model not loaded"}
 
-        # === LOAD IMAGE ===
-        if not os.path.exists(image_path):
-            return {"success": False, "error": "Image file not found"}
+        # Читаем и готовим картинку
+        img = Image.open(image_path).convert('RGB')
+        draw = ImageDraw.Draw(img)
 
-        img = Image.open(image_path)
-        if img.mode != 'RGB':
-            img = img.convert('RGB')
-
-        # === INFERENCE ===
+        # Инференс
         results = model(img)
-        detections = json.loads(results.pandas().xyxy[0].to_json(orient="records"))
+        detections = results.pandas().xyxy[0].to_dict(orient="records")
 
-        original_name = os.path.basename(image_path)
-        output_filename = f"analyzed_{model_name or 'default'}_{original_name}"
-        output_path = os.path.join('static', output_filename)
+        # Рисуем боксы
+        for det in detections:
+            x0, y0, x1, y1 = det['xmin'], det['ymin'], det['xmax'], det['ymax']
+            draw.rectangle([x0, y0, x1, y1], outline="red", width=2)
+            draw.text((x0, y0), f"{det['name']} {det['confidence']:.2f}", fill="white")
 
-        plt.figure(figsize=(12, 8))
-        plt.imshow(np.array(img))
-        plt.axis('off')
-
-        for detection in detections:
-            xmin, ymin, xmax, ymax = detection['xmin'], detection['ymin'], detection['xmax'], detection['ymax']
-            rect = plt.Rectangle((xmin, ymin), xmax - xmin, ymax - ymin,
-                                 fill=False, color='red', linewidth=2)
-            plt.gca().add_patch(rect)
-            plt.text(xmin, ymin, f"{detection['name']} {detection['confidence']:.2f}",
-                     color='white', backgroundcolor='red', fontsize=8)
-
-        plt.savefig(output_path, bbox_inches='tight', dpi=150)
-        plt.close()
+        # Сохраняем результат
+        original = os.path.basename(image_path)
+        out_name = f"analyzed_default_{original}"
+        out_path = os.path.join('static', out_name)
+        img.save(out_path, optimize=True)
 
         return {
             "success": True,
             "detections": detections,
-            "output_image": output_filename,
-            "original_image": original_name,
-            "model_used": model_name or "default"
+            "output_image": out_name,
+            "original_image": original,
+            "model_used": "default"
         }
 
     except Exception as e:
-        return {
-            "success": False,
-            "error": str(e),
-            "model_used": model_name or "default"
-        }
-
+        return {"success": False, "error": str(e)}
 
 
 @app.teardown_appcontext
@@ -343,84 +291,6 @@ def close_connection(exception):
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
-def process_image(image_path, model_name=None):
-    try:
-        if model_name:
-            model_path = os.path.join('models', model_name)
-            if not os.path.exists(model_path):
-                return {"success": False, "error": f"Model file {model_name} not found"}
-
-            try:
-                model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path)
-            except Exception as e:
-                return {"success": False, "error": f"Error loading model: {str(e)}"}
-        else:
-            if not hasattr(process_image, 'default_model'):
-                process_image.default_model = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
-            model = process_image.default_model
-
-        if not os.path.exists(image_path):
-            return {"success": False, "error": "Image file not found"}
-
-        img = Image.open(image_path)
-        if img.mode != 'RGB':
-            img = img.convert('RGB')
-
-        results = model(img)
-        detections = json.loads(results.pandas().xyxy[0].to_json(orient="records"))
-
-        original_name = os.path.basename(image_path)
-        output_filename = f"analyzed_{model_name or 'default'}_{original_name}"
-        output_path = os.path.join('static', output_filename)
-
-        plt.figure(figsize=(12, 8))
-        plt.imshow(np.array(img))
-        plt.axis('off')
-
-        for detection in detections:
-            xmin, ymin, xmax, ymax = detection['xmin'], detection['ymin'], detection['xmax'], detection['ymax']
-            rect = plt.Rectangle((xmin, ymin), xmax - xmin, ymax - ymin,
-                                 fill=False, color='red', linewidth=2)
-            plt.gca().add_patch(rect)
-            plt.text(xmin, ymin, f"{detection['name']} {detection['confidence']:.2f}",
-                     color='white', backgroundcolor='red', fontsize=8)
-
-        plt.savefig(output_path, bbox_inches='tight', dpi=150)
-        plt.close()
-
-        return {
-            "success": True,
-            "detections": detections,
-            "output_image": output_filename,
-            "original_image": original_name,
-            "model_used": model_name or "default"
-        }
-
-    except Exception as e:
-        return {
-            "success": False,
-            "error": str(e),
-            "model_used": model_name or "default"
-        }
-
-def calculate_age(birth_date_str):
-    try:
-        birth_date = datetime.strptime(birth_date_str, "%Y-%m-%d")
-        today = datetime.today()
-        age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
-        return age
-    except:
-        return "N/A"
-
-def parse_end_date(s: str) -> datetime | None:
-    for fmt in ('%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S'):
-        try:
-            return datetime.strptime(s, fmt)
-        except ValueError:
-            continue
-    return None
 
 
 @app.route('/')
